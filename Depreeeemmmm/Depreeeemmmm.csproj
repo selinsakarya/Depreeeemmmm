@@ -25,6 +25,8 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="MassTransit" Version="9.1.0-develop.58" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="9.1.0-develop.58" />
     </ItemGroup>
 
 </Project>

@@ -17,8 +17,6 @@ internal static class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
         
-        builder.Services.AddDbContext<DepremDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString")));
-        
         builder.Host.UseSerilog((context, cfg) =>
         {
             cfg
@@ -46,6 +44,9 @@ internal static class Program
         {
             options.WaitForJobsToComplete = true;
         });
+        
+        builder.Services.AddDbContext<DepremDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString")));
+        builder.Services.AddMassTransit(builder.Configuration);
 
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
