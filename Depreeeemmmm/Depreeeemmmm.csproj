@@ -29,6 +29,10 @@
         <PackageReference Include="MassTransit.RabbitMQ" Version="9.1.0-develop.58" />
         <PackageReference Include="Dapper" Version="2.0.123" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+        <PackageReference Include="FluentValidation" Version="12.0.0" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.3" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
     </ItemGroup>
 
 </Project>

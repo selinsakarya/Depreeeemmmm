@@ -1,10 +1,15 @@
 using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Extensions;
+using Depreeeemmmm.Filters;
 using Depreeeemmmm.Jobs;
+using Depreeeemmmm.MobileBff.V1.Controllers;
 using Depreeeemmmm.Proxies.AfadProxy;
 using Depreeeemmmm.Services;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Serilog;
@@ -12,14 +17,25 @@ using Serilog.Events;
 
 namespace Depreeeemmmm;
 
-internal static class Program
+internal class Program
 {
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
         
-        builder.Services.AddControllers();
-        
+        builder.Services.AddControllers(options => options.Filters.Add(new ProblemDetailsExceptionFilter()))
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            })
+            .AddFluentValidation(fv =>
+            {
+                fv.DisableDataAnnotationsValidation = true;
+                fv.RegisterValidatorsFromAssemblyContaining<Program>();
+                fv.ImplicitlyValidateChildProperties = true;
+            });        
         builder.Services.AddOpenApi();
         
         builder.Host.UseSerilog((context, cfg) =>
@@ -35,6 +51,13 @@ internal static class Program
                 .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
                 .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
                 .ReadFrom.Configuration(context.Configuration);
+        });
+        
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.CustomSchemaIds(t => t.FullName);
+
+            c.SwaggerDoc("v1", new() { Title = "Depreeeemmmm", Version = "v1" });
         });
         
         builder.Services.AddQuartz(q =>
@@ -74,6 +97,12 @@ internal static class Program
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
+            
+            app.UseSwagger();
+
+            app.UseSwaggerUI();
+        
+            app.MapGet("/", () => Results.Redirect("/swagger/index.html")).ExcludeFromDescription();
         }
 
         app.UseHttpsRedirection();
