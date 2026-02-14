@@ -6,8 +6,7 @@ using Depreeeemmmm.Data;
 using Depreeeemmmm.Extensions;
 using Depreeeemmmm.Filters;
 using Depreeeemmmm.Jobs;
-using Depreeeemmmm.MobileBff.V1.Controllers;
-using Depreeeemmmm.Proxies.AfadProxy;
+using Depreeeemmmm.Proxies.AfadApiProxy;
 using Depreeeemmmm.Services;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
@@ -77,7 +76,7 @@ internal class Program
         
         builder.Services.AddMassTransit(builder.Configuration);
         
-        builder.Services.AddHttpClient<IAfadProxy, AfadProxy>(cfg =>
+        builder.Services.AddHttpClient<IAfadApiProxy, AfadApiProxy>(cfg =>
             {
                 cfg.BaseAddress = new Uri(builder.Configuration["Afad:Url"]!);
                 cfg.DefaultRequestHeaders.Add(HeaderKeys.UserAgent, AppConstants.ApplicationName);
