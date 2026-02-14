@@ -1,8 +1,10 @@
 using System.Net.Http.Headers;
 using Depreeeemmmm.Constants;
+using Depreeeemmmm.Data;
 using Depreeeemmmm.Extensions;
 using Depreeeemmmm.Jobs;
 using Depreeeemmmm.Proxies.AfadProxy;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Serilog;
 using Serilog.Events;
@@ -14,6 +16,8 @@ internal static class Program
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+        
+        builder.Services.AddDbContext<DepremDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString")));
         
         builder.Host.UseSerilog((context, cfg) =>
         {

@@ -1,3 +1,4 @@
+using Depreeeemmmm.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Depreeeemmmm.Data;
@@ -15,4 +16,6 @@ public class DepremDbContext : DbContext
         
         builder.ApplyConfigurationsFromAssembly(typeof(DepremDbContext).Assembly);
     }
+
+    public DbSet<Earthquake> Earthquakes { get; set; }
 }

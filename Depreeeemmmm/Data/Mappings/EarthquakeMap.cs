@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Depreeeemmmm.Data.Mappings;
 
-public class EarthquakeMap : IEntityTypeConfiguration<Earthquake>
+public class EarthquakeMap : IEntityTypeConfiguration<Entities.Earthquake>
 {
-    public void Configure(EntityTypeBuilder<Earthquake> builder)
+    public void Configure(EntityTypeBuilder<Entities.Earthquake> builder)
     {
         builder.ToTable("Earthquakes");
 

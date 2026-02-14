@@ -1,4 +1,6 @@
-using Depreeeemmmm.Proxies.AfadProxy;
+using Depreeeemmmm.Data;
+using Depreeeemmmm.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
 
 namespace Depreeeemmmm.Jobs;
@@ -6,20 +8,20 @@ namespace Depreeeemmmm.Jobs;
 public class EarthquakeSynchronizer : IJob
 {
     private readonly ILogger<EarthquakeSynchronizer> _logger;
-    private readonly IAfadProxy _afadProxy;
+    private readonly DepremDbContext _depremDbContext;
 
     public EarthquakeSynchronizer(
-        ILogger<EarthquakeSynchronizer> logger, 
-        IAfadProxy afadProxy)
+        ILogger<EarthquakeSynchronizer> logger,
+        DepremDbContext depremDbContext)
     {
         _logger = logger;
-        _afadProxy = afadProxy;
+        _depremDbContext = depremDbContext;
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
         _logger.LogInformation("EarthquakeSynchronizer is started");
-        
+
         _logger.LogInformation("EarthquakeSynchronizer is finished");
     }
 }
