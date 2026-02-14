@@ -27,6 +27,8 @@
         </PackageReference>
         <PackageReference Include="MassTransit" Version="9.1.0-develop.58" />
         <PackageReference Include="MassTransit.RabbitMQ" Version="9.1.0-develop.58" />
+        <PackageReference Include="Dapper" Version="2.0.123" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>
 
 </Project>

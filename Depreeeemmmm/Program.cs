@@ -4,6 +4,7 @@ using Depreeeemmmm.Data;
 using Depreeeemmmm.Extensions;
 using Depreeeemmmm.Jobs;
 using Depreeeemmmm.Proxies.AfadProxy;
+using Depreeeemmmm.Services;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Serilog;
@@ -47,10 +48,7 @@ internal static class Program
         
         builder.Services.AddDbContext<DepremDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString")));
         builder.Services.AddMassTransit(builder.Configuration);
-
-        builder.Services.AddControllers();
-        builder.Services.AddOpenApi();
-        
+        builder.Services.AddScoped<IOutboxMessagePublisherService, OutboxMessagePublisherService>();
         builder.Services.AddHttpClient<IAfadProxy, AfadProxy>(cfg =>
             {
                 cfg.BaseAddress = new Uri(builder.Configuration["Afad:Url"]!);
@@ -61,6 +59,9 @@ internal static class Program
             })
             .AddHttpRetryPolicyHandler()
             .AddCircuitBreakerPolicy(200, TimeSpan.FromSeconds(30));
+        
+        builder.Services.AddControllers();
+        builder.Services.AddOpenApi();
 
         WebApplication app = builder.Build();
 
