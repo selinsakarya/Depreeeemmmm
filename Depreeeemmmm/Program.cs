@@ -18,6 +18,10 @@ internal static class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
         
+        builder.Services.AddControllers();
+        
+        builder.Services.AddOpenApi();
+        
         builder.Host.UseSerilog((context, cfg) =>
         {
             cfg
@@ -47,8 +51,9 @@ internal static class Program
         });
         
         builder.Services.AddDbContext<DepremDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString")));
+        
         builder.Services.AddMassTransit(builder.Configuration);
-        builder.Services.AddScoped<IOutboxMessagePublisherService, OutboxMessagePublisherService>();
+        
         builder.Services.AddHttpClient<IAfadProxy, AfadProxy>(cfg =>
             {
                 cfg.BaseAddress = new Uri(builder.Configuration["Afad:Url"]!);
@@ -60,8 +65,9 @@ internal static class Program
             .AddHttpRetryPolicyHandler()
             .AddCircuitBreakerPolicy(200, TimeSpan.FromSeconds(30));
         
-        builder.Services.AddControllers();
-        builder.Services.AddOpenApi();
+        builder.Services.AddHostedService<OutboxMessagePublisherHostedService>();
+        
+        builder.Services.AddScoped<IOutboxMessagePublisherService, OutboxMessagePublisherService>();
 
         WebApplication app = builder.Build();
 
