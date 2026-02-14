@@ -118,7 +118,7 @@ public class OutboxMessagePublisherService : IOutboxMessagePublisherService
     {
         DateTime now = DateTime.UtcNow;
         
-        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("NutriConDbConnectionString")))
+        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DepremDbConnectionString")))
         {
             await conn.ExecuteAsync(@"UPDATE OutboxMessages 
                                       SET Status = 3,
@@ -130,7 +130,7 @@ public class OutboxMessagePublisherService : IOutboxMessagePublisherService
 
     private async Task<IEnumerable<OutboxMessage>> GetOutboxMessages()
     {
-        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("NutriConDbConnectionString")))
+        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DepremDbConnectionString")))
         {
             DateTime now = DateTime.UtcNow;
 
