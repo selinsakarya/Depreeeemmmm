@@ -1,6 +1,4 @@
 using Depreeeemmmm.Data;
-using Depreeeemmmm.Data.Entities;
-using Microsoft.EntityFrameworkCore;
 using Quartz;
 
 namespace Depreeeemmmm.Jobs;
