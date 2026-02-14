@@ -4,14 +4,18 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Depreeeemmmm.Data.Mappings;
 
-public class EarthquakeMap : IEntityTypeConfiguration<Entities.Earthquake>
+public class EarthquakeMap : IEntityTypeConfiguration<Earthquake>
 {
-    public void Configure(EntityTypeBuilder<Entities.Earthquake> builder)
+    public void Configure(EntityTypeBuilder<Earthquake> builder)
     {
         builder.ToTable("Earthquakes");
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.SecondaryUniqueId)
+            .HasColumnType("uniqueidentifier")
+            .IsRequired();
+        
         builder.Property(x => x.Magnitude)
             .HasColumnType("float")
             .IsRequired();

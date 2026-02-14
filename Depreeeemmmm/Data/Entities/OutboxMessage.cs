@@ -8,7 +8,7 @@ public class OutboxMessage
 
     public string Data { get; set; }
 
-    public DateTime OccurredOn { get; set; }
+    public DateTime OccurredAt { get; set; }
 
     public OutboxMessageStatus Status { get; set; }
 
@@ -22,9 +22,9 @@ public class OutboxMessage
 
     public OutboxMessage() { }
 
-    public OutboxMessage(DateTime occurredOn, string type, string data)
+    public OutboxMessage(DateTime occurredAt, string type, string data)
     {
-        OccurredOn = occurredOn;
+        OccurredAt = occurredAt;
         Type = type;
         Data = data;
         Status = OutboxMessageStatus.New;

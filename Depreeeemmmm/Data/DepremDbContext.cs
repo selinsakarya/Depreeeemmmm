@@ -18,4 +18,6 @@ public class DepremDbContext : DbContext
     }
 
     public DbSet<Earthquake> Earthquakes { get; set; }
+    
+    public DbSet<OutboxMessage> OutboxMessages { get; set; }
 }

@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Extensions;
+using Depreeeemmmm.Factories;
 using Depreeeemmmm.Filters;
 using Depreeeemmmm.Jobs;
 using Depreeeemmmm.Proxies.AfadApiProxy;
@@ -61,7 +62,7 @@ internal class Program
         
         builder.Services.AddQuartz(q =>
         {
-            q.ScheduleJob<EarthquakeSynchronizer>(trigger => trigger
+            q.ScheduleJob<AfadEarthquakeSynchronizer>(trigger => trigger
                 .WithSimpleSchedule(x => x
                     .WithIntervalInMinutes(1)
                     .RepeatForever()));
@@ -90,6 +91,7 @@ internal class Program
         builder.Services.AddHostedService<OutboxMessagePublisherHostedService>();
         
         builder.Services.AddScoped<IOutboxMessagePublisherService, OutboxMessagePublisherService>();
+        builder.Services.AddScoped<IOutboxMessageFactory, OutboxMessageFactory>();
 
         WebApplication app = builder.Build();
 

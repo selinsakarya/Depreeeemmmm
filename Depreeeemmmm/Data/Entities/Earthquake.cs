@@ -5,6 +5,8 @@ namespace Depreeeemmmm.Data.Entities;
 public class Earthquake
 {
     public int Id { get; set; }
+    
+    public Guid SecondaryUniqueId { get; set; }
 
     public double Magnitude { get; set; }
 
@@ -17,7 +19,7 @@ public class Earthquake
     public DateTime OccurredAt { get; set; }
 
     public string IntegrationReferenceId { get; set; }
-
+    
     public EarthquakeSource Source { get; set; }
 
     public string Location { get; set; }

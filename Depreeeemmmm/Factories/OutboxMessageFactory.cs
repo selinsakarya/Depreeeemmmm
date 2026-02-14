@@ -15,7 +15,7 @@ public class OutboxMessageFactory : IOutboxMessageFactory
         OutboxMessage outboxMessage = new OutboxMessage
         {
             Data = data,
-            OccurredOn = now,
+            OccurredAt = now,
             Status = OutboxMessageStatus.New,
             Type = type,
             QueueName = queueName

@@ -16,7 +16,7 @@ public class OutboxMessageMap : IEntityTypeConfiguration<OutboxMessage>
             .HasColumnType("nvarchar(max)")
             .IsRequired();
 
-        builder.Property(x => x.OccurredOn)
+        builder.Property(x => x.OccurredAt)
             .HasColumnType("datetime(2,7)")
             .IsRequired();
         
