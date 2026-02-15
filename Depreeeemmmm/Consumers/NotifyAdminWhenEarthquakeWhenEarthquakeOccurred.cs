@@ -13,14 +13,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Depreeeemmmm.Consumers;
 
-public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<EarthquakeOccurred>
+public class NotifyAdminWhenEarthquakeWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 {
-    private readonly ILogger<NotifyAdminWhenEarthquakeWhenEarthquakeOccured> _logger;
+    private readonly ILogger<NotifyAdminWhenEarthquakeWhenEarthquakeOccurred> _logger;
     private readonly DepremDbContext _depremDbContext;
     private readonly ITelegramApiProxy _telegramApiProxy;
 
-    public NotifyAdminWhenEarthquakeWhenEarthquakeOccured(
-        ILogger<NotifyAdminWhenEarthquakeWhenEarthquakeOccured> logger,
+    public NotifyAdminWhenEarthquakeWhenEarthquakeOccurred(
+        ILogger<NotifyAdminWhenEarthquakeWhenEarthquakeOccurred> logger,
         DepremDbContext depremDbContext,
         ITelegramApiProxy telegramApiProxy)
     {

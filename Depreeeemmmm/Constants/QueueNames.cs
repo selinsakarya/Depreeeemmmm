@@ -2,5 +2,5 @@ namespace Depreeeemmmm.Constants;
 
 public static class QueueNames
 {
-    public const string NotifyAdminWhenEarthquakeWhenEarthquakeOccured = "NotifyAdminWhenEarthquakeWhenEarthquakeOccured";
+    public const string NotifyAdminWhenEarthquakeWhenEarthquakeOccurred = "NotifyAdminWhenEarthquakeWhenEarthquakeOccurred";
 }
