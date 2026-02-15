@@ -236,7 +236,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
         if (isEarthquakeOccurredNearAdmin)
         {
-            sb.AppendLine($"⚠🚨{adminLocation.Name} lokasyonuna yakın - {distanceToAdminInKm} km");
+            sb.AppendLine($"🚨{adminLocation.Name} lokasyonuna yakın - {distanceToAdminInKm} km");
         }
         
         if (isMagnitudeJumpDetected)
