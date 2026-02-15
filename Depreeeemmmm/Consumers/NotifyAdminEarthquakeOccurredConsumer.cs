@@ -33,7 +33,7 @@ public class NotifyAdminEarthquakeOccurredConsumer : IConsumer<EarthquakeOccurre
     {
         EarthquakeOccurred earthquakeOccurredEvent = context.Message;
 
-        _logger.LogInformation("NotifyAdminWhenEarthquakeWhenEarthquakeOccured is started. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
+        _logger.LogInformation("NotifyAdminEarthquakeOccurredConsumer is started. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
 
         List<AdminLocation> adminLocations = await _depremDbContext.AdminLocations.AsNoTracking().ToListAsync();
 
@@ -97,7 +97,7 @@ public class NotifyAdminEarthquakeOccurredConsumer : IConsumer<EarthquakeOccurre
             await SendTelegramMessage(alertMessage);
         }
 
-        _logger.LogInformation("NotifyAdminWhenEarthquakeWhenEarthquakeOccured is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
+        _logger.LogInformation("NotifyAdminEarthquakeOccurredConsumer is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
     }
 
     private static bool IsMagnitudeAboveThreshold(Earthquake earthquake, double threshold)
