@@ -1,6 +1,7 @@
 using System.Text;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
+using Depreeeemmmm.Models;
 using Depreeeemmmm.Proxies;
 using Depreeeemmmm.Proxies.TelegramApi;
 using Depreeeemmmm.Proxies.TelegramApi.Models.Requests;
@@ -72,18 +73,26 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
             bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minJump: 1.5);
 
             bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 72, minimumEarthQuakeToCompare: 5);
+            
+            bool isMagnitudeTrendGoingUpward = await IsMagnitudeTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 72, minimumEarthQuakeToCompare: 5);
 
             bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
+
+            AdminEarthquakeAlertNotificationParameters adminEarthquakeAlertNotificationParameters = new AdminEarthquakeAlertNotificationParameters()
+            {
+                Earthquake = earthquake,
+                AdminLocation = adminLocation,
+                DistanceToAdminInKm = distanceToAdminInKm,
+                IsEarthquakeOccurredNearAdmin = isEarthquakeOccurredNearAdmin,
+                IsMagnitudeAboveThreshold = isMagnitudeAboveThreshold,
+                IsDepthBelowThreshold = isDepthBelowThreshold,
+                IsMagnitudeJumpDetected = isMagnitudeJumpDetected,
+                IsDepthTrendGoingUpward = isDepthTrendGoingUpward,
+                IsMagnitudeTrendGoingUpward = isMagnitudeTrendGoingUpward,
+                IsClusterDensityHigh = isClusterDensityHigh
+            };
             
-            string alertMessage = BuildTelegramAlertMessage(earthquake,
-                adminLocation,
-                distanceToAdminInKm: distanceToAdminInKm,
-                isEarthquakeOccurredNearAdmin: isEarthquakeOccurredNearAdmin,
-                isMagnitudeAboveThreshold: isMagnitudeAboveThreshold,
-                isDepthBelowThreshold: isDepthBelowThreshold,
-                isMagnitudeJumpDetected: isMagnitudeJumpDetected,
-                isDepthTrendGoingUpward: isDepthTrendGoingUpward,
-                isClusterDensityHigh: isClusterDensityHigh);
+            string alertMessage = BuildTelegramAlertMessage(adminEarthquakeAlertNotificationParameters);
 
             await SendTelegramMessage(alertMessage);
         }
@@ -135,6 +144,32 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         double secondHalfAvgDepth = nearbyEarthquakes.Skip(mid).Average(e => e.Depth);
 
         return secondHalfAvgDepth < firstHalfAvgDepth;
+    }
+    
+    private async Task<bool> IsMagnitudeTrendGoingUpward(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeToCompare)
+    {
+        List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm, timeWindowInHours);
+
+        if (nearbyEarthquakes.Count < minimumEarthQuakeToCompare)
+        {
+            return false;
+        }
+
+        int upwardMovementsCount = 0;
+        
+        int totalComparisons = nearbyEarthquakes.Count - 1;
+
+        for (int i = 1; i < nearbyEarthquakes.Count; i++)
+        {
+            if (nearbyEarthquakes[i].Magnitude >= nearbyEarthquakes[i - 1].Magnitude)
+            {
+                upwardMovementsCount += 1;
+            }
+        }
+
+        double ratio = (double)upwardMovementsCount / totalComparisons;
+
+        return ratio >= 0.6;
     }
 
     private async Task<bool> IsClusterDensityHigh(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeCount)
@@ -200,44 +235,49 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         return isRecentEarthquakeOccurredNearCurrentEarthquake;
     }
 
-    private static string BuildTelegramAlertMessage(Earthquake earthquake, AdminLocation adminLocation, double distanceToAdminInKm, bool isEarthquakeOccurredNearAdmin, bool isMagnitudeAboveThreshold, bool isDepthBelowThreshold, bool isMagnitudeJumpDetected, bool isDepthTrendGoingUpward, bool isClusterDensityHigh)
+    private static string BuildTelegramAlertMessage(AdminEarthquakeAlertNotificationParameters parameters)
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.AppendLine($"📍Konum: {earthquake.Location}");
-        sb.AppendLine($"📈Büyüklük: {earthquake.Magnitude}");
-        sb.AppendLine($"📏Derinlik: {earthquake.Depth} km");
+        sb.AppendLine($"📍Konum: {parameters.Earthquake.Location}");
+        sb.AppendLine($"📈Büyüklük: {parameters.Earthquake.Magnitude}");
+        sb.AppendLine($"📏Derinlik: {parameters.Earthquake.Depth} km");
 
         TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
 
-        DateTime turkeyDateTime = TimeZoneInfo.ConvertTimeFromUtc(earthquake.OccurredAt, turkeyTimeZone);
+        DateTime turkeyDateTime = TimeZoneInfo.ConvertTimeFromUtc(parameters.Earthquake.OccurredAt, turkeyTimeZone);
 
         sb.AppendLine($"🕓Zaman: {turkeyDateTime:dd.MM.yyyy HH:mm} Turkey Time");
         sb.AppendLine();
 
-        if (isEarthquakeOccurredNearAdmin)
+        if (parameters.IsEarthquakeOccurredNearAdmin)
         {
-            sb.AppendLine($"🚨{adminLocation.Name} lokasyonuna yakın - {distanceToAdminInKm} km");
+            sb.AppendLine($"🚨{parameters.AdminLocation.Name} lokasyonuna yakın - {parameters.DistanceToAdminInKm} km");
         }
 
-        if (isMagnitudeJumpDetected)
+        if (parameters.IsMagnitudeJumpDetected)
         {
             sb.AppendLine("•🚨 Bölgesel büyüklük sıçraması tespit edildi");
         }
 
-        if (isDepthTrendGoingUpward)
+        if (parameters.IsDepthTrendGoingUpward)
         {
             sb.AppendLine("•🚨 Sarsıntılar giderek daha sığ seviyelerde oluşuyor");
         }
 
-        if (isMagnitudeAboveThreshold)
+        if (parameters.IsMagnitudeAboveThreshold)
         {
             sb.AppendLine("⚠️ Büyüklük eşik değerin üzerinde");
         }
 
-        if (isDepthBelowThreshold)
+        if (parameters.IsDepthBelowThreshold)
         {
             sb.AppendLine("⚠️ Yüzeye yakın derinlikte");
+        }
+
+        if (parameters.IsMagnitudeTrendGoingUpward)
+        {
+            sb.AppendLine("⚠️ Deprem büyüklük trendi yukarı yönlü");
         }
 
         sb.AppendLine();

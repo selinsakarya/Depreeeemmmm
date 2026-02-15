@@ -39,7 +39,7 @@ public class AfadEarthquakeSynchronizer : IJob
 
         DateTime now = DateTime.UtcNow;
         
-        DateTime anHourAgo = now.AddHours(-2);
+        DateTime anHourAgo = now.AddHours(-1);
         
         DateTime startTime = anHourAgo;
         
