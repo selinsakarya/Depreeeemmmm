@@ -56,7 +56,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         {
             double distanceToAdminInKm = CalculateDistanceInKm(earthquake.Coordinates.Y, earthquake.Coordinates.X, adminLocation.Latitude, adminLocation.longitude);
 
-            bool isEarthquakeOccurredNearAdmin = distanceToAdminInKm <= 200;
+            bool isEarthquakeOccurredNearAdmin = distanceToAdminInKm <= 150;
 
             if (isEarthquakeOccurredNearAdmin is false)
             {
@@ -69,11 +69,11 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
             bool isDepthBelowThreshold = IsDepthBelowThreshold(earthquake, threshold: 10);
 
-            bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minJump: 1.5);
+            bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minJump: 1.5);
 
-            bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
+            bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
 
-            bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
+            bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
 
             string alertMessage = BuildTelegramAlertMessage(earthquake,
                 adminLocation,
