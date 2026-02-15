@@ -70,13 +70,13 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
             bool isDepthBelowThreshold = IsDepthBelowThreshold(earthquake, threshold: 10);
 
-            bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minJump: 1.5);
+            bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 150, timeWindowInHours: 36, minJump: 1.2);
 
-            bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 72, minimumEarthQuakeToCompare: 5);
+            bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
             
-            bool isMagnitudeTrendGoingUpward = await IsMagnitudeTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 72, minimumEarthQuakeToCompare: 5);
+            bool isMagnitudeTrendGoingUpward = await IsMagnitudeTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
 
-            bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
+            bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 150, timeWindowInHours: 36, minimumEarthQuakeCount: 8);
 
             AdminEarthquakeAlertNotificationParameters adminEarthquakeAlertNotificationParameters = new AdminEarthquakeAlertNotificationParameters()
             {
