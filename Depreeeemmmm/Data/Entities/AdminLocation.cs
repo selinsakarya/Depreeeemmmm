@@ -1,10 +1,10 @@
-using NetTopologySuite.Geometries;
-
 namespace Depreeeemmmm.Data.Entities;
 
 public class AdminLocation
 {
     public int Id { get; set; }
+
+    public string Name { get; set; }
 
     public double Latitude { get; set; }
     

@@ -34,11 +34,11 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
         _logger.LogInformation("NotifyAdminWhenEarthquakeWhenEarthquakeOccured is started. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
 
-        AdminLocation? adminLocation = await _depremDbContext.AdminLocations.AsNoTracking().OrderByDescending(a => a.CreatedAt).FirstOrDefaultAsync(context.CancellationToken);
-
-        if (adminLocation is null)
+        List<AdminLocation> adminLocations = await _depremDbContext.AdminLocations.AsNoTracking().ToListAsync();
+        
+        if (adminLocations.Count == 0)
         {
-            _logger.LogWarning("AdminLocation is null");
+            _logger.LogWarning("No admin location defined");
 
             return;
         }
@@ -52,52 +52,49 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
             return;
         }
 
-        bool isEarthquakeOccurredNearAdmin = IsEarthquakeOccurredNearAdmin(earthquake, maxDistanceInKm: 200, adminLocation);
-
-        if (isEarthquakeOccurredNearAdmin is false)
+        foreach (AdminLocation adminLocation in adminLocations)
         {
-            return;
-        }
+            double distanceToAdminInKm = CalculateDistanceInKm(earthquake.Coordinates.Y, earthquake.Coordinates.X, adminLocation.Latitude, adminLocation.longitude);
+
+            bool isEarthquakeOccurredNearAdmin = distanceToAdminInKm <= 200;
+
+            if (isEarthquakeOccurredNearAdmin is false)
+            {
+                _logger.LogWarning($"Skipping notification because earthquake is not near admin location. DistanceToAdminInKm: {distanceToAdminInKm}");
+            
+                return;
+            }
         
-        bool isMagnitudeAboveThreshold = IsMagnitudeAboveThreshold(earthquake, threshold: 3.9);
+            bool isMagnitudeAboveThreshold = IsMagnitudeAboveThreshold(earthquake, threshold: 3.9);
 
-        bool isDepthBelowThreshold = IsDepthBelowThreshold(earthquake, threshold: 10);
+            bool isDepthBelowThreshold = IsDepthBelowThreshold(earthquake, threshold: 10);
 
-        bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minJump: 1.5);
+            bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minJump: 1.5);
 
-        bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
+            bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
 
-        bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
+            bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 200, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
 
-        string alertMessage = BuildTelegramAlertMessage(earthquake,
-            isEarthquakeOccurredNearAdmin, 
-            isMagnitudeAboveThreshold, 
-            isDepthBelowThreshold,
-            isMagnitudeJumpDetected,
-            isDepthTrendGoingUpward,
-            isClusterDensityHigh);
+            string alertMessage = BuildTelegramAlertMessage(earthquake,
+                adminLocation,
+                distanceToAdminInKm: distanceToAdminInKm,
+                isEarthquakeOccurredNearAdmin: isEarthquakeOccurredNearAdmin,
+                isMagnitudeAboveThreshold: isMagnitudeAboveThreshold,
+                isDepthBelowThreshold: isDepthBelowThreshold,
+                isMagnitudeJumpDetected: isMagnitudeJumpDetected,
+                isDepthTrendGoingUpward: isDepthTrendGoingUpward,
+                isClusterDensityHigh: isClusterDensityHigh);
 
-        await SendTelegramMessage(alertMessage);
+            await SendTelegramMessage(alertMessage);
+        }
 
         _logger.LogInformation("NotifyAdminWhenEarthquakeWhenEarthquakeOccured is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
-    }
-
-    private static bool IsEarthquakeOccurredNearAdmin(Earthquake earthquake, int maxDistanceInKm, AdminLocation adminLocation)
-    {
-        double earthquakeLatitude = earthquake.Coordinates.Y;
-
-        double earthquakeLongitude = earthquake.Coordinates.X;
-
-        double distanceInKm = CalculateDistanceInKm(earthquakeLatitude, earthquakeLongitude, adminLocation.Latitude, adminLocation.longitude);
-
-        bool isEarthquakeOccurredNearAdmin = distanceInKm <= maxDistanceInKm;
-
-        return isEarthquakeOccurredNearAdmin;
     }
 
     private static double CalculateDistanceInKm(double latitude1, double longitude1, double latitude2, double longitude2)
     {
         double deltaLatitude = ToRadians(latitude2 - latitude1);
+        
         double deltaLongitude = ToRadians(longitude2 - longitude1);
 
         double haversine = Math.Sin(deltaLatitude / 2) * Math.Sin(deltaLatitude / 2) +
@@ -108,7 +105,9 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
         const double earthRadiusKm = 6371;
 
-        return earthRadiusKm * centralAngle;
+        double distance =  earthRadiusKm * centralAngle;
+        
+        return Math.Round(distance, 2);
     }
 
     private static double ToRadians(double angle) => angle * Math.PI / 180.0;
@@ -220,41 +219,44 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         return false;
     }
 
-    private static string BuildTelegramAlertMessage(Earthquake earthquake, bool isEarthquakeOccurredNearAdmin, bool isMagnitudeAboveThreshold, bool isDepthBelowThreshold, bool isMagnitudeJumpDetected, bool isDepthTrendGoingUpward, bool isClusterDensityHigh)
+    private static string BuildTelegramAlertMessage(Earthquake earthquake, AdminLocation adminLocation, double distanceToAdminInKm , bool isEarthquakeOccurredNearAdmin, bool isMagnitudeAboveThreshold, bool isDepthBelowThreshold, bool isMagnitudeJumpDetected, bool isDepthTrendGoingUpward, bool isClusterDensityHigh)
     {
         StringBuilder sb = new StringBuilder();
-
-        sb.AppendLine("🚨 *Depreeeemmmm*");
-        sb.AppendLine();
-        sb.AppendLine($"📍 Konum: {earthquake.Location}");
-        sb.AppendLine($"📏 Büyüklük: {earthquake.Magnitude}");
-        sb.AppendLine($"📉 Derinlik: {earthquake.Depth} km");
-        sb.AppendLine($"🕒 Zaman: {earthquake.OccurredAt:dd.MM.yyyy HH:mm} UTC");
+        
+        sb.AppendLine($"📍Konum: {earthquake.Location}");
+        sb.AppendLine($"📈Büyüklük: {earthquake.Magnitude}");
+        sb.AppendLine($"📏Derinlik: {earthquake.Depth} km");
+        
+        TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        
+        DateTime turkeyDateTime = TimeZoneInfo.ConvertTimeFromUtc(earthquake.OccurredAt, turkeyTimeZone);
+        
+        sb.AppendLine($"🕓Zaman: {turkeyDateTime:dd.MM.yyyy HH:mm} Turkey Time");
         sb.AppendLine();
 
         if (isEarthquakeOccurredNearAdmin)
         {
-            sb.AppendLine("• Admin lokasyonuna yakın");
+            sb.AppendLine($"⚠🚨{adminLocation.Name} lokasyonuna yakın - {distanceToAdminInKm} km");
         }
-
-        if (isMagnitudeAboveThreshold)
-        {
-            sb.AppendLine("• Büyüklük eşik değerin üzerinde");
-        }
-
-        if (isDepthBelowThreshold)
-        {
-            sb.AppendLine("• Yüzeye yakın derinlikte");
-        }
-
+        
         if (isMagnitudeJumpDetected)
         {
-            sb.AppendLine("• Bölgesel büyüklük sıçraması tespit edildi");
+            sb.AppendLine("•🚨 Bölgesel büyüklük sıçraması tespit edildi");
         }
 
         if (isDepthTrendGoingUpward)
         {
-            sb.AppendLine("• Sarsıntılar giderek daha sığ seviyelerde oluşuyor");
+            sb.AppendLine("•🚨 Sarsıntılar giderek daha sığ seviyelerde oluşuyor");
+        }
+
+        if (isMagnitudeAboveThreshold)
+        {
+            sb.AppendLine("⚠️ Büyüklük eşik değerin üzerinde");
+        }
+
+        if (isDepthBelowThreshold)
+        {
+            sb.AppendLine("⚠️ Yüzeye yakın derinlikte");
         }
 
         sb.AppendLine();

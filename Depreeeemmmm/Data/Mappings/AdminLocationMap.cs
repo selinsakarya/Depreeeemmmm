@@ -12,6 +12,10 @@ public class AdminLocationMap : IEntityTypeConfiguration<AdminLocation>
 
         builder.HasKey(x => x.Id);
         
+        builder.Property(x => x.Name)
+            .HasColumnType("nvarchar(100)")
+            .IsRequired();
+        
         builder.Property(x => x.Latitude)
             .HasColumnType("float")
             .IsRequired();
