@@ -13,14 +13,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Depreeeemmmm.Consumers;
 
-public class NotifyAdminEarthquakeOccurredConsumer : IConsumer<EarthquakeOccurred>
+public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 {
-    private readonly ILogger<NotifyAdminEarthquakeOccurredConsumer> _logger;
+    private readonly ILogger<NotifyAdminWhenEarthquakeOccurred> _logger;
     private readonly DepremDbContext _depremDbContext;
     private readonly ITelegramApiProxy _telegramApiProxy;
 
-    public NotifyAdminEarthquakeOccurredConsumer(
-        ILogger<NotifyAdminEarthquakeOccurredConsumer> logger,
+    public NotifyAdminWhenEarthquakeOccurred(
+        ILogger<NotifyAdminWhenEarthquakeOccurred> logger,
         DepremDbContext depremDbContext,
         ITelegramApiProxy telegramApiProxy)
     {
@@ -33,7 +33,7 @@ public class NotifyAdminEarthquakeOccurredConsumer : IConsumer<EarthquakeOccurre
     {
         EarthquakeOccurred earthquakeOccurredEvent = context.Message;
 
-        _logger.LogInformation("NotifyAdminEarthquakeOccurredConsumer is started. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
+        _logger.LogInformation("NotifyAdminWhenEarthquakeOccurred is started. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
 
         List<AdminLocation> adminLocations = await _depremDbContext.AdminLocations.AsNoTracking().ToListAsync();
 
@@ -97,7 +97,7 @@ public class NotifyAdminEarthquakeOccurredConsumer : IConsumer<EarthquakeOccurre
             await SendTelegramMessage(alertMessage);
         }
 
-        _logger.LogInformation("NotifyAdminEarthquakeOccurredConsumer is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
+        _logger.LogInformation("NotifyAdminWhenEarthquakeOccurred is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
     }
 
     private static bool IsMagnitudeAboveThreshold(Earthquake earthquake, double threshold)
