@@ -19,5 +19,7 @@ public class DepremDbContext : DbContext
 
     public DbSet<Earthquake> Earthquakes { get; set; }
     
+    public DbSet<AdminLocation> AdminLocations { get; set; }
+    
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
 }

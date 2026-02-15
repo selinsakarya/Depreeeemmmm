@@ -9,7 +9,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<NotifySelinWhenEarthquakeWhenEarthquakeOccured>();
+            x.AddConsumer<NotifyAdminWhenEarthquakeWhenEarthquakeOccured>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -38,7 +38,7 @@ public static class ServiceCollectionExtensions
 
                 cfg.ReceiveEndpoint(ep =>
                 {
-                    ep.ConfigureConsumer<NotifySelinWhenEarthquakeWhenEarthquakeOccured>(context);
+                    ep.ConfigureConsumer<NotifyAdminWhenEarthquakeWhenEarthquakeOccured>(context);
                 });
             });
         });

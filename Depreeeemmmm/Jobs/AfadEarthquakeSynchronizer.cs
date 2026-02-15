@@ -39,7 +39,7 @@ public class AfadEarthquakeSynchronizer : IJob
 
         DateTime now = DateTime.UtcNow;
         
-        DateTime anHourAgo = now.AddHours(-1);
+        DateTime anHourAgo = now.AddHours(-2);
         
         DateTime startTime = anHourAgo;
         
@@ -97,7 +97,7 @@ public class AfadEarthquakeSynchronizer : IJob
                SecondaryUniqueId = secondaryUniqueId,
                Magnitude = @event.Magnitude,
                Depth = @event.Depth,
-               Coordinates = new Point(@event.Latitude, @event.Longitude) { SRID = 4326 },
+               Coordinates = new Point(@event.Longitude, @event.Latitude) { SRID = 4326 },
                OccurredAt = @event.Date,
                IntegrationReferenceId = @event.EventId,
                Source = EarthquakeSource.Afad,
