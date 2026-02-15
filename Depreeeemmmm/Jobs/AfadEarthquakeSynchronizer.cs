@@ -40,14 +40,21 @@ public class AfadEarthquakeSynchronizer : IJob
         
         DateTime anHourAgo = now.AddHours(-1);
         
-        DateTime start = anHourAgo;
+        DateTime startTime = anHourAgo;
         
-        DateTime end = now;
+        DateTime endTime = now;
+
+        Earthquake? lastEarthquake = await _depremDbContext.Earthquakes.OrderByDescending(e => e.OccurredAt).FirstOrDefaultAsync(context.CancellationToken);
+
+        if (lastEarthquake is not null)
+        {
+            startTime = lastEarthquake.OccurredAt;
+        }
         
         QueryEventApiRequest queryEventApiRequest = new QueryEventApiRequest
         {
-            Start = start.ToString("yyyy-MM-ddTHH:mm:ss"),
-            End = end.ToString("yyyy-MM-ddTHH:mm:ss"),
+            Start = startTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+            End = endTime.ToString("yyyy-MM-ddTHH:mm:ss"),
             OrderBy = "timedesc"
         };
 
@@ -66,12 +73,14 @@ public class AfadEarthquakeSynchronizer : IJob
 
        if (events.Count == 0)
        {
-           _logger.LogInformation($"No events occured. Start: {start} End: {end}");
+           _logger.LogInformation("No events occured. Start: {StartTime} End: {EndTime}", startTime, endTime);
 
            return;
        }
        
-       List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= start && e.OccurredAt < end).ToListAsync(context.CancellationToken);
+       _logger.LogInformation("{Count} Earthquake occured since {StartTime}", events.Count, startTime);
+       
+       List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= startTime && e.OccurredAt < endTime).ToListAsync(context.CancellationToken);
 
        foreach (QueryEventApiResponse @event in events)
        {
@@ -112,7 +121,7 @@ public class AfadEarthquakeSynchronizer : IJob
 
            _depremDbContext.OutboxMessages.Add(earthquakeOccuredOutboxMessage);
            
-           _logger.LogWarning($"An earthquake ocurred. Magnitude: {@event.Magnitude} Location: {@event.Location} Date: {@event.Date}");
+           _logger.LogWarning("An earthquake occurred. EventMagnitude: {EventMagnitude} EventLocation: {EventLocation} Date: {EventDate}", @event.Magnitude, @event.Location, @event.Date);
        }
 
        await _depremDbContext.SaveChangesAsync(context.CancellationToken);
