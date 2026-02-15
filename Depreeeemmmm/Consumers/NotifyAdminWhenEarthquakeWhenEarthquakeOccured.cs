@@ -61,7 +61,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
             if (isEarthquakeOccurredNearAdmin is false)
             {
                 _logger.LogWarning($"Skipping notification because earthquake is not near admin location. DistanceToAdminInKm: {distanceToAdminInKm}");
-
+                
                 return;
             }
 
@@ -74,7 +74,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
             bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 72, minimumEarthQuakeToCompare: 5);
 
             bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
-
+            
             string alertMessage = BuildTelegramAlertMessage(earthquake,
                 adminLocation,
                 distanceToAdminInKm: distanceToAdminInKm,
