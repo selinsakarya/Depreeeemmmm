@@ -101,5 +101,4 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
     {
         throw new NotImplementedException();
     }
-    
 }
