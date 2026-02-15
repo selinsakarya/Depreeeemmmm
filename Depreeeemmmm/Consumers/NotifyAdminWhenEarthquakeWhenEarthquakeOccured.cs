@@ -121,24 +121,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
     private async Task<bool> IsDepthTrendGoingUpward(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeToCompare)
     {
-        DateTime start = earthquake.OccurredAt.AddHours(-timeWindowInHours);
-
-        List<Earthquake> recentEarthquakes = await _depremDbContext.Earthquakes
-            .AsNoTracking()
-            .Where(e => e.OccurredAt >= start && e.OccurredAt < earthquake.OccurredAt)
-            .ToListAsync();
-
-        List<Earthquake> nearbyEarthquakes = new List<Earthquake>();
-
-        foreach (Earthquake recentEarthquake in recentEarthquakes)
-        {
-            bool isRecentEarthquakeOccurredNearCurrentEarthquake = IsRecentEarthquakeOccurredNearCurrentEarthquake(earthquake, recentEarthquake, maxDistanceInKm);
-
-            if (isRecentEarthquakeOccurredNearCurrentEarthquake)
-            {
-                nearbyEarthquakes.Add(recentEarthquake);
-            }
-        }
+        List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm, timeWindowInHours);
 
         if (nearbyEarthquakes.Count < minimumEarthQuakeToCompare)
         {
@@ -156,21 +139,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
     private async Task<bool> IsClusterDensityHigh(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeCount)
     {
-        DateTime start = earthquake.OccurredAt.AddHours(-timeWindowInHours);
-
-        List<Earthquake> recentEarthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= start && e.OccurredAt < earthquake.OccurredAt).ToListAsync();
-
-        List<Earthquake> nearbyEarthquakes = new List<Earthquake>();
-
-        foreach (Earthquake recentEarthquake in recentEarthquakes)
-        {
-            bool isRecentEarthquakeOccurredNearCurrentEarthquake = IsRecentEarthquakeOccurredNearCurrentEarthquake(earthquake, recentEarthquake, maxDistanceInKm);
-
-            if (isRecentEarthquakeOccurredNearCurrentEarthquake)
-            {
-                nearbyEarthquakes.Add(recentEarthquake);
-            }
-        }
+        List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm, timeWindowInHours);
 
         if (nearbyEarthquakes.Count >= minimumEarthQuakeCount)
         {
