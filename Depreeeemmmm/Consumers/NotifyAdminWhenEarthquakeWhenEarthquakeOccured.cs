@@ -223,7 +223,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
             }
         }
 
-        return nearbyEarthquakes;
+        return nearbyEarthquakes.OrderByDescending(e => e.OccurredAt).ToList();
     }
 
     private static bool IsRecentEarthquakeOccurredNearCurrentEarthquake(Earthquake earthquake, Earthquake recentEarthquake, int maxDistanceInKm)
