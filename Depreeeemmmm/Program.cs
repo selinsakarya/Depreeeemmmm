@@ -17,7 +17,7 @@ using Serilog.Events;
 
 namespace Depreeeemmmm;
 
-internal class Program
+internal abstract class Program
 {
     public static void Main(string[] args)
     {

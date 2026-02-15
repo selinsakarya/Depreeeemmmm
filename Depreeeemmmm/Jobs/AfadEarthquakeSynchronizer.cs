@@ -78,8 +78,6 @@ public class AfadEarthquakeSynchronizer : IJob
            return;
        }
        
-       _logger.LogInformation("{Count} Earthquake occured since {StartTime}", events.Count, startTime);
-       
        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= startTime && e.OccurredAt < endTime).ToListAsync(context.CancellationToken);
 
        foreach (QueryEventApiResponse @event in events)

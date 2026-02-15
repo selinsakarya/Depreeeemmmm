@@ -1,3 +1,4 @@
+using Depreeeemmmm.Consumers;
 using MassTransit;
 
 namespace Depreeeemmmm.Extensions;
@@ -8,6 +9,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddMassTransit(x =>
         {
+            x.AddConsumer<AnalyseEarthquakeWhenEarthquakeOccured>();
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 cfg.Host(
@@ -32,8 +35,11 @@ public static class ServiceCollectionExtensions
                         TimeSpan.FromMilliseconds(1000));
                     r.Ignore<ApplicationException>();
                 });
-                    
-                
+
+                cfg.ReceiveEndpoint(ep =>
+                {
+                    ep.ConfigureConsumer<AnalyseEarthquakeWhenEarthquakeOccured>(context);
+                });
             });
         });
 
