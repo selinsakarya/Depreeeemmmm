@@ -24,11 +24,7 @@ public class AfadApiProxy : IAfadApiProxy
     {
         string uri = $"/apiv2/event/filter?{request.ToQueryString()}";
 
-        string requestBody = JsonSerializer.Serialize(request);
-
-        HttpContent httpContent = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-        HttpResponseMessage responseMessage = await _httpClient.PostAsync(uri, httpContent, cancellationToken);
+        HttpResponseMessage responseMessage = await _httpClient.GetAsync(uri, cancellationToken);
 
         ProxyResponse<List<QueryEventApiResponse>> proxyResponse = new ProxyResponse<List<QueryEventApiResponse>>();
 

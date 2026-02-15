@@ -8,6 +8,7 @@ using Depreeeemmmm.Factories;
 using Depreeeemmmm.Filters;
 using Depreeeemmmm.Jobs;
 using Depreeeemmmm.Proxies.AfadApiProxy;
+using Depreeeemmmm.Proxies.TelegramApi;
 using Depreeeemmmm.Services;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
@@ -77,13 +78,25 @@ internal abstract class Program
         
         builder.Services.AddDbContext<DepremDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString"), x => x.UseNetTopologySuite()));
-
         
         builder.Services.AddMassTransit(builder.Configuration);
         
         builder.Services.AddHttpClient<IAfadApiProxy, AfadApiProxy>(cfg =>
             {
                 cfg.BaseAddress = new Uri(builder.Configuration["Afad:Url"]!);
+                cfg.DefaultRequestHeaders.Add(HeaderKeys.UserAgent, AppConstants.ApplicationName);
+                cfg.DefaultRequestHeaders.Add(HeaderKeys.Channel, AppConstants.ApplicationName);
+                cfg.DefaultRequestHeaders.Add(HeaderKeys.ClientId, AppConstants.ApplicationName);
+                cfg.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            })
+            .AddHttpRetryPolicyHandler()
+            .AddCircuitBreakerPolicy(200, TimeSpan.FromSeconds(30));
+
+        string? telegramBotUri = $"{ Environment.GetEnvironmentVariable("TELEGRAM_BOT_URI")}";
+
+        builder.Services.AddHttpClient<ITelegramApiProxy, TelegramApiProxy>(cfg =>
+            {
+                cfg.BaseAddress = new Uri(telegramBotUri!);
                 cfg.DefaultRequestHeaders.Add(HeaderKeys.UserAgent, AppConstants.ApplicationName);
                 cfg.DefaultRequestHeaders.Add(HeaderKeys.Channel, AppConstants.ApplicationName);
                 cfg.DefaultRequestHeaders.Add(HeaderKeys.ClientId, AppConstants.ApplicationName);

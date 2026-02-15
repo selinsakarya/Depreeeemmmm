@@ -1,8 +1,13 @@
 using System.Text;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
+using Depreeeemmmm.Proxies;
+using Depreeeemmmm.Proxies.TelegramApi;
+using Depreeeemmmm.Proxies.TelegramApi.Models.Requests;
+using Depreeeemmmm.Proxies.TelegramApi.Models.Responses;
 using Events;
 using MassTransit;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Depreeeemmmm.Consumers;
@@ -11,13 +16,16 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 {
     private readonly ILogger<NotifyAdminWhenEarthquakeWhenEarthquakeOccured> _logger;
     private readonly DepremDbContext _depremDbContext;
+    private readonly ITelegramApiProxy _telegramApiProxy;
 
     public NotifyAdminWhenEarthquakeWhenEarthquakeOccured(
         ILogger<NotifyAdminWhenEarthquakeWhenEarthquakeOccured> logger,
-        DepremDbContext depremDbContext)
+        DepremDbContext depremDbContext, 
+        ITelegramApiProxy telegramApiProxy)
     {
         _logger = logger;
         _depremDbContext = depremDbContext;
+        _telegramApiProxy = telegramApiProxy;
     }
 
     public async Task Consume(ConsumeContext<EarthquakeOccurred> context)
@@ -54,8 +62,8 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         
         string alertMessage = BuildTelegramAlertMessage(earthquake, isEarthquakeOccurredNearAdmin, isMagnitudeAboveThreshold, isDepthBelowThreshold, isMagnitudeJumpDetected);
 
-        _logger.LogInformation(alertMessage);
-        
+        await SendTelegramMessage(alertMessage);
+
         _logger.LogInformation("NotifyAdminWhenEarthquakeWhenEarthquakeOccured is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
     }
 
@@ -204,5 +212,35 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
             >= 3 => "ORTA",
             _ => "BİLGİ"
         };
+    }
+    
+    private async Task SendTelegramMessage(string alertMessage)
+    {
+        SendMessageApiRequest sendMessageApiRequest = new SendMessageApiRequest
+        {
+            ChatId = 1725466102,
+            Text = alertMessage
+        };
+
+        ProxyResponse<SendMessageApiResponse> sendMessageProxyResponse = await _telegramApiProxy.SendMessage(sendMessageApiRequest);
+
+        if (sendMessageProxyResponse.HasError)
+        {
+            ProblemDetails problemDetails = sendMessageProxyResponse.ProblemDetails;
+
+            if (problemDetails.Status is StatusCodes.Status500InternalServerError or StatusCodes.Status408RequestTimeout)
+            {
+                throw new Exception("A transient error occured while sending message");
+            }
+            
+            throw new ApplicationException($"An error occured while sending message. Message: {alertMessage}");
+        }
+
+        SendMessageApiResponse sendMessageApiResponse = sendMessageProxyResponse.Data;
+
+        if (sendMessageApiResponse.Ok is false)
+        {
+            throw new ApplicationException($"Telegram message could not be sent. Message: {alertMessage}");
+        }
     }
 }
