@@ -10,7 +10,6 @@ using Depreeeemmmm.Proxies.AfadApiProxy.Models.Responses;
 using Events;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.SqlServer.Types;
 using Quartz;
 
 namespace Depreeeemmmm.Jobs;

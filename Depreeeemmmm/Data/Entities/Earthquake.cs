@@ -1,5 +1,4 @@
 using Depreeeemmmm.Data.Enums;
-using Microsoft.SqlServer.Types;
 using NetTopologySuite.Geometries;
 
 namespace Depreeeemmmm.Data.Entities;

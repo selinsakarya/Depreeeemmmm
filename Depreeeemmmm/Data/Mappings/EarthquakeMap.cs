@@ -1,8 +1,6 @@
-using System.Data.SqlTypes;
 using Depreeeemmmm.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.SqlServer.Types;
 
 namespace Depreeeemmmm.Data.Mappings;
 
