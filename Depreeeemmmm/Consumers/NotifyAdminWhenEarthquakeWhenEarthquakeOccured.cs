@@ -61,7 +61,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
             if (isEarthquakeOccurredNearAdmin is false)
             {
-                _logger.LogWarning($"Skipping notification because earthquake is not near admin location. DistanceToAdminInKm: {distanceToAdminInKm}");
+                _logger.LogWarning($"Skipping notification because earthquake is not near admin location. DistanceToAdminInKm: {distanceToAdminInKm} Location: {earthquake.Location}");
                 
                 return;
             }
