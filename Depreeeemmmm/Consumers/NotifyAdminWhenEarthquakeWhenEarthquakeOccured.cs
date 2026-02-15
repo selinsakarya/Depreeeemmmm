@@ -58,9 +58,21 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
         bool isDepthBelowThreshold = IsDepthBelowThreshold(earthquake, threshold: 10);
 
-        bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, distanceInKm: 50, lookBackHours: 48, minJump: 1.5);
+        Task<bool> isMagnitudeJumpDetectedTask = IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 50, timeWindowInHours: 48, minJump: 1.5);
+
+        Task<bool> isDepthTrendGoingUpwardTask = IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 50, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
+
+        Task<bool> isClusterDensityHighTask = IsClusterDensityHigh(earthquake, maxDistanceInKm: 50, timeWindowInHours: 48, minimumEarthQuakeCount: 15);
+
+        await Task.WhenAll(isMagnitudeJumpDetectedTask, isDepthTrendGoingUpwardTask, isClusterDensityHighTask);
         
-        string alertMessage = BuildTelegramAlertMessage(earthquake, isEarthquakeOccurredNearAdmin, isMagnitudeAboveThreshold, isDepthBelowThreshold, isMagnitudeJumpDetected);
+        string alertMessage = BuildTelegramAlertMessage(earthquake,
+            isEarthquakeOccurredNearAdmin, 
+            isMagnitudeAboveThreshold, 
+            isDepthBelowThreshold,
+            isMagnitudeJumpDetectedTask.Result,
+            isDepthTrendGoingUpwardTask.Result,
+            isClusterDensityHighTask.Result);
 
         await SendTelegramMessage(alertMessage);
 
@@ -114,9 +126,9 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         return isDepthBelowThreshold;
     }
 
-    private async Task<bool> IsMagnitudeJumpDetected(Earthquake earthquake, int distanceInKm, int lookBackHours, double minJump)
+    private async Task<bool> IsMagnitudeJumpDetected(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, double minJump)
     {
-        DateTime lookBackStart = earthquake.OccurredAt.AddHours(-lookBackHours);
+        DateTime lookBackStart = earthquake.OccurredAt.AddHours(-timeWindowInHours);
 
         List<Earthquake> recentEarthquakes = await _depremDbContext.Earthquakes.Where(e => e.OccurredAt >= lookBackStart && e.OccurredAt < earthquake.OccurredAt).ToListAsync();
 
@@ -124,9 +136,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
         foreach (Earthquake recentEarthquake in recentEarthquakes)
         {
-            double distance = CalculateDistanceInKm(earthquake.Coordinates.Y, earthquake.Coordinates.X, recentEarthquake.Coordinates.Y, recentEarthquake.Coordinates.X);
-
-            bool isRecentEarthquakeOccurredNearCurrentEarthquake = distance <= distanceInKm;
+            bool isRecentEarthquakeOccurredNearCurrentEarthquake = IsRecentEarthquakeOccurredNearCurrentEarthquake(earthquake, recentEarthquake, maxDistanceInKm);
 
             if (isRecentEarthquakeOccurredNearCurrentEarthquake)
             {
@@ -144,19 +154,82 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         return earthquake.Magnitude >= maxRecentMagnitude + minJump;
     }
 
-    private static string BuildTelegramAlertMessage(Earthquake earthquake, bool isEarthquakeOccurredNearAdmin, bool isMagnitudeAboveThreshold, bool isDepthBelowThreshold, bool isMagnitudeJumpDetected)
+    private async Task<bool> IsDepthTrendGoingUpward(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeToCompare)
+    {
+        DateTime start = earthquake.OccurredAt.AddHours(-timeWindowInHours);
+
+        List<Earthquake> recentEarthquakes = await _depremDbContext.Earthquakes
+            .AsNoTracking()
+            .Where(e => e.OccurredAt >= start && e.OccurredAt < earthquake.OccurredAt)
+            .ToListAsync();
+        
+        List<Earthquake> nearbyEarthquakes = new List<Earthquake>();
+        
+        foreach (Earthquake recentEarthquake in recentEarthquakes)
+        {
+            bool isRecentEarthquakeOccurredNearCurrentEarthquake = IsRecentEarthquakeOccurredNearCurrentEarthquake(earthquake, recentEarthquake, maxDistanceInKm);
+
+            if (isRecentEarthquakeOccurredNearCurrentEarthquake)
+            {
+                nearbyEarthquakes.Add(recentEarthquake);
+            }
+        }
+
+        if (nearbyEarthquakes.Count < minimumEarthQuakeToCompare)
+        {
+            return false;
+        }
+
+        int mid = nearbyEarthquakes.Count / 2;
+
+        double firstHalfAvgDepth = nearbyEarthquakes
+            .Take(mid)
+            .Average(e => e.Depth);
+
+        double secondHalfAvgDepth = nearbyEarthquakes
+            .Skip(mid)
+            .Average(e => e.Depth);
+
+        return secondHalfAvgDepth < firstHalfAvgDepth;
+    }
+
+    private async Task<bool> IsClusterDensityHigh(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeCount)
+    {
+        DateTime start = earthquake.OccurredAt.AddHours(-timeWindowInHours);
+
+        List<Earthquake> recentEarthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= start && e.OccurredAt < earthquake.OccurredAt).ToListAsync();
+
+        List<Earthquake> nearbyEarthquakes = new List<Earthquake>();
+
+        foreach (Earthquake recentEarthquake in recentEarthquakes)
+        {
+            bool isRecentEarthquakeOccurredNearCurrentEarthquake = IsRecentEarthquakeOccurredNearCurrentEarthquake(earthquake, recentEarthquake, maxDistanceInKm);
+
+            if (isRecentEarthquakeOccurredNearCurrentEarthquake)
+            {
+                nearbyEarthquakes.Add(recentEarthquake);
+            }
+        }
+
+        if (nearbyEarthquakes.Count >= minimumEarthQuakeCount)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string BuildTelegramAlertMessage(Earthquake earthquake, bool isEarthquakeOccurredNearAdmin, bool isMagnitudeAboveThreshold, bool isDepthBelowThreshold, bool isMagnitudeJumpDetected, bool isDepthTrendGoingUpward, bool isClusterDensityHigh)
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.AppendLine("🚨 *Deprem Uyarısı*");
+        sb.AppendLine("🚨 *Depreeeemmmm*");
         sb.AppendLine();
         sb.AppendLine($"📍 Konum: {earthquake.Location}");
         sb.AppendLine($"📏 Büyüklük: {earthquake.Magnitude}");
         sb.AppendLine($"📉 Derinlik: {earthquake.Depth} km");
         sb.AppendLine($"🕒 Zaman: {earthquake.OccurredAt:dd.MM.yyyy HH:mm} UTC");
         sb.AppendLine();
-
-        sb.AppendLine("⚠️ *Tetiklenen Kriterler:*");
 
         if (isEarthquakeOccurredNearAdmin)
         {
@@ -178,40 +251,14 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
             sb.AppendLine("• Bölgesel büyüklük sıçraması tespit edildi");
         }
 
+        if (isDepthTrendGoingUpward)
+        {
+            sb.AppendLine("• Sarsıntılar giderek daha sığ seviyelerde oluşuyor");
+        }
+
         sb.AppendLine();
 
-        string riskLevel = CalculateRiskLevel(isMagnitudeAboveThreshold, isDepthBelowThreshold, isMagnitudeJumpDetected);
-
-        sb.AppendLine($"🔥 *Risk Seviyesi:* {riskLevel}");
-
         return sb.ToString();
-    }
-    
-    private static string CalculateRiskLevel(bool isMagnitudeAboveThreshold, bool isDepthBelowThreshold, bool isMagnitudeJumpDetected)
-    {
-        int score = 0;
-
-        if (isMagnitudeAboveThreshold)
-        {
-            score += 2;
-        }
-
-        if (isDepthBelowThreshold)
-        {
-            score += 2;
-        }
-        
-        if (isMagnitudeJumpDetected)
-        {
-            score += 3;
-        }
-
-        return score switch
-        {
-            >= 5 => "YÜKSEK",
-            >= 3 => "ORTA",
-            _ => "BİLGİ"
-        };
     }
     
     private async Task SendTelegramMessage(string alertMessage)
@@ -242,5 +289,14 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         {
             throw new ApplicationException($"Telegram message could not be sent. Message: {alertMessage}");
         }
+    }
+
+    private static bool IsRecentEarthquakeOccurredNearCurrentEarthquake(Earthquake earthquake, Earthquake recentEarthquake, int maxDistanceInKm)
+    {
+        double distance = CalculateDistanceInKm(earthquake.Coordinates.Y, earthquake.Coordinates.X, recentEarthquake.Coordinates.Y, recentEarthquake.Coordinates.X);
+
+        bool isRecentEarthquakeOccurredNearCurrentEarthquake = distance <= maxDistanceInKm;
+        
+        return isRecentEarthquakeOccurredNearCurrentEarthquake;
     }
 }
