@@ -39,10 +39,9 @@ public class EarthquakeMap : IEntityTypeConfiguration<Earthquake>
         builder.Property(x => x.Source)
             .HasColumnType("int")
             .IsRequired();
-        
+
         builder.Property(x => x.Location)
-            .HasColumnType("nvarchar(300)")
-            .IsRequired();
+            .HasColumnType("nvarchar(300)");
         
         builder.Property(x => x.IsDeleted)
             .HasColumnType("bit")

@@ -1,3 +1,4 @@
+using Depreeeemmmm.Constants;
 using Depreeeemmmm.Consumers;
 using MassTransit;
 
@@ -36,7 +37,7 @@ public static class ServiceCollectionExtensions
                     r.Ignore<ApplicationException>();
                 });
 
-                cfg.ReceiveEndpoint(ep =>
+                cfg.ReceiveEndpoint(QueueNames.NotifyAdminWhenEarthquakeWhenEarthquakeOccured, ep =>
                 {
                     ep.ConfigureConsumer<NotifyAdminWhenEarthquakeWhenEarthquakeOccured>(context);
                 });
