@@ -1,3 +1,4 @@
+using NetTopologySuite.Geometries;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
 using Depreeeemmmm.Data.Enums;
@@ -9,6 +10,7 @@ using Depreeeemmmm.Proxies.AfadApiProxy.Models.Responses;
 using Events;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.SqlServer.Types;
 using Quartz;
 
 namespace Depreeeemmmm.Jobs;
@@ -38,7 +40,7 @@ public class AfadEarthquakeSynchronizer : IJob
 
         DateTime now = DateTime.UtcNow;
         
-        DateTime anHourAgo = now.AddHours(-1);
+        DateTime anHourAgo = now.AddHours(-2);
         
         DateTime startTime = anHourAgo;
         
@@ -90,14 +92,13 @@ public class AfadEarthquakeSynchronizer : IJob
            }
 
            Guid secondaryUniqueId = Guid.NewGuid();
-
+           
            Earthquake earthquake = new Earthquake
            {
                SecondaryUniqueId = secondaryUniqueId,
                Magnitude = @event.Magnitude,
                Depth = @event.Depth,
-               Latitude = @event.Latitude,
-               Longitude = @event.Longitude,
+               Coordinates = new Point(@event.Latitude, @event.Longitude) { SRID = 4326 },
                OccurredAt = @event.Date,
                IntegrationReferenceId = @event.EventId,
                Source = EarthquakeSource.Afad,

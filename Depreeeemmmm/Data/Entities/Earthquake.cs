@@ -1,4 +1,6 @@
 using Depreeeemmmm.Data.Enums;
+using Microsoft.SqlServer.Types;
+using NetTopologySuite.Geometries;
 
 namespace Depreeeemmmm.Data.Entities;
 
@@ -7,14 +9,12 @@ public class Earthquake
     public int Id { get; set; }
     
     public Guid SecondaryUniqueId { get; set; }
+    
+    public Point Coordinates { get; set; } 
 
     public double Magnitude { get; set; }
 
     public double Depth { get; set; }
-
-    public double Latitude { get; set; }
-    
-    public double Longitude { get; set; }
 
     public DateTime OccurredAt { get; set; }
 

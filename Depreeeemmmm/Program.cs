@@ -75,6 +75,10 @@ internal abstract class Program
         
         builder.Services.AddDbContext<DepremDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString")));
         
+        builder.Services.AddDbContext<DepremDbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString"), x => x.UseNetTopologySuite()));
+
+        
         builder.Services.AddMassTransit(builder.Configuration);
         
         builder.Services.AddHttpClient<IAfadApiProxy, AfadApiProxy>(cfg =>

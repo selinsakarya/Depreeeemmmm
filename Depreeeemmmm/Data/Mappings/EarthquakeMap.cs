@@ -1,6 +1,8 @@
+using System.Data.SqlTypes;
 using Depreeeemmmm.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.SqlServer.Types;
 
 namespace Depreeeemmmm.Data.Mappings;
 
@@ -24,14 +26,10 @@ public class EarthquakeMap : IEntityTypeConfiguration<Earthquake>
             .HasColumnType("float")
             .IsRequired();
 
-        builder.Property(x => x.Latitude)
-            .HasColumnType("float")
+        builder.Property(x => x.Coordinates)
+            .HasColumnType("geography")
             .IsRequired();
-        
-        builder.Property(x => x.Longitude)
-            .HasColumnType("float")
-            .IsRequired();
-        
+
         builder.Property(x => x.OccurredAt)
             .HasColumnType("datetime2(7)")
             .IsRequired();
