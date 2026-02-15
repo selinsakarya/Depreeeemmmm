@@ -58,7 +58,7 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
         bool isDepthBelowThreshold = IsDepthBelowThreshold(earthquake, threshold: 10);
 
-        bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, distanceInKm: 50, lookbackHours: 48, minJump: 1.5);
+        bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, distanceInKm: 50, lookBackHours: 48, minJump: 1.5);
         
         string alertMessage = BuildTelegramAlertMessage(earthquake, isEarthquakeOccurredNearAdmin, isMagnitudeAboveThreshold, isDepthBelowThreshold, isMagnitudeJumpDetected);
 
@@ -114,11 +114,11 @@ public class NotifyAdminWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
         return isDepthBelowThreshold;
     }
 
-    private async Task<bool> IsMagnitudeJumpDetected(Earthquake earthquake, int distanceInKm, int lookbackHours, double minJump)
+    private async Task<bool> IsMagnitudeJumpDetected(Earthquake earthquake, int distanceInKm, int lookBackHours, double minJump)
     {
-        DateTime lookbackStart = earthquake.OccurredAt.AddHours(-lookbackHours);
+        DateTime lookBackStart = earthquake.OccurredAt.AddHours(-lookBackHours);
 
-        List<Earthquake> recentEarthquakes = await _depremDbContext.Earthquakes.Where(e => e.OccurredAt >= lookbackStart && e.OccurredAt < earthquake.OccurredAt).ToListAsync();
+        List<Earthquake> recentEarthquakes = await _depremDbContext.Earthquakes.Where(e => e.OccurredAt >= lookBackStart && e.OccurredAt < earthquake.OccurredAt).ToListAsync();
 
         List<Earthquake> nearbyEarthquakes = new List<Earthquake>();
 
