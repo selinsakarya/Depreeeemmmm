@@ -17,9 +17,9 @@ public class AnalyseEarthquakeWhenEarthquakeOccured : IConsumer<EarthquakeOccurr
     {
         EarthquakeOccurred earthquakeOccurredEvent = context.Message;
         
-        _logger.LogInformation($"AnalyseEarthquakeWhenEarthquakeOccured is started. EarthquakeSecondaryUniqueId: {earthquakeOccurredEvent.EarthquakeSecondaryUniqueId}");
+        _logger.LogInformation("AnalyseEarthquakeWhenEarthquakeOccured is started. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
 
-        _logger.LogInformation($"AnalyseEarthquakeWhenEarthquakeOccured is finished. EarthquakeSecondaryUniqueId: {earthquakeOccurredEvent.EarthquakeSecondaryUniqueId}");
+        _logger.LogInformation("AnalyseEarthquakeWhenEarthquakeOccured is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
         
         return Task.CompletedTask;
     }
