@@ -43,16 +43,10 @@ public class NotifySelinWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
 
         Task notifySelinIfEarthquakeIsShallowTask = NotifySelinIfEarthquakeIsShallow(earthquake, maxDepthInKm: 10);
 
-        Task notifySelinIfNearbyEarthquakeActivityIn24HoursIsAboveThresholdTask = NotifySelinIfNearbyEarthquakeActivityIn24HoursIsAboveThreshold(earthquake, radiusInMeters: 50, threshold: 5);
-
-        Task notifySelinIfMagnitudeTrendIncreasedInTheLast48Hours = NotifySelinIfMagnitudeTrendIncreasedInTheLast48Hours(earthquake);
-
         await Task.WhenAll(
             notifySelinIfEarthquakeOccurredNearHerTask,
             notifySelinIfEarthquakeMagnitudeIsAboveThresholdTask,
-            notifySelinIfEarthquakeIsShallowTask,
-            notifySelinIfNearbyEarthquakeActivityIn24HoursIsAboveThresholdTask,
-            notifySelinIfMagnitudeTrendIncreasedInTheLast48Hours);
+            notifySelinIfEarthquakeIsShallowTask);
         
         _logger.LogInformation("NotifySelinWhenEarthquakeWhenEarthquakeOccured is finished. EarthquakeSecondaryUniqueId: {EarthquakeSecondaryUniqueId}", earthquakeOccurredEvent.EarthquakeSecondaryUniqueId);
     }
@@ -68,16 +62,6 @@ public class NotifySelinWhenEarthquakeWhenEarthquakeOccured : IConsumer<Earthqua
     }
     
     private async Task NotifySelinIfEarthquakeIsShallow(Earthquake earthquake, double maxDepthInKm)
-    {
-        throw new NotImplementedException();
-    }
-    
-    private async Task NotifySelinIfNearbyEarthquakeActivityIn24HoursIsAboveThreshold(Earthquake earthquake, double radiusInMeters, int threshold)
-    {
-        throw new NotImplementedException();
-    }
-
-    private Task NotifySelinIfMagnitudeTrendIncreasedInTheLast48Hours(Earthquake earthquake)
     {
         throw new NotImplementedException();
     }
