@@ -17,6 +17,8 @@ public class DepremDbContext : DbContext
         builder.ApplyConfigurationsFromAssembly(typeof(DepremDbContext).Assembly);
     }
 
+    public DbSet<Configuration> Configurations { get; set; }
+    
     public DbSet<Earthquake> Earthquakes { get; set; }
     
     public DbSet<AdminLocation> AdminLocations { get; set; }

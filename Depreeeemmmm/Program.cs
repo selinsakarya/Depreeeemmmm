@@ -104,11 +104,14 @@ internal abstract class Program
             })
             .AddHttpRetryPolicyHandler()
             .AddCircuitBreakerPolicy(200, TimeSpan.FromSeconds(30));
+
+        builder.Services.AddMemoryCache();
         
         builder.Services.AddHostedService<OutboxMessagePublisherHostedService>();
         
         builder.Services.AddScoped<IOutboxMessagePublisherService, OutboxMessagePublisherService>();
         builder.Services.AddScoped<IOutboxMessageFactory, OutboxMessageFactory>();
+        builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 
         WebApplication app = builder.Build();
 

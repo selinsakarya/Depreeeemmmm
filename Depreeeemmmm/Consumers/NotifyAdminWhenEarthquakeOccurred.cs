@@ -1,4 +1,5 @@
 using System.Text;
+using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
 using Depreeeemmmm.Models;
@@ -6,6 +7,7 @@ using Depreeeemmmm.Proxies;
 using Depreeeemmmm.Proxies.TelegramApi;
 using Depreeeemmmm.Proxies.TelegramApi.Models.Requests;
 using Depreeeemmmm.Proxies.TelegramApi.Models.Responses;
+using Depreeeemmmm.Services;
 using Events;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
@@ -18,15 +20,18 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
     private readonly ILogger<NotifyAdminWhenEarthquakeOccurred> _logger;
     private readonly DepremDbContext _depremDbContext;
     private readonly ITelegramApiProxy _telegramApiProxy;
+    private readonly IConfigurationService _configurationService;
 
     public NotifyAdminWhenEarthquakeOccurred(
         ILogger<NotifyAdminWhenEarthquakeOccurred> logger,
         DepremDbContext depremDbContext,
-        ITelegramApiProxy telegramApiProxy)
+        ITelegramApiProxy telegramApiProxy, 
+        IConfigurationService configurationService)
     {
         _logger = logger;
         _depremDbContext = depremDbContext;
         _telegramApiProxy = telegramApiProxy;
+        _configurationService = configurationService;
     }
 
     public async Task Consume(ConsumeContext<EarthquakeOccurred> context)
@@ -287,9 +292,11 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
     private async Task SendTelegramMessage(string alertMessage)
     {
+        int chatId = await GetAdminTelegramChatId();
+
         SendMessageApiRequest sendMessageApiRequest = new SendMessageApiRequest
         {
-            ChatId = 1725466102,
+            ChatId = chatId,
             Text = alertMessage
         };
 
@@ -313,5 +320,24 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         {
             throw new ApplicationException($"Telegram message could not be sent. Message: {alertMessage}");
         }
+    }
+
+    private async Task<int> GetAdminTelegramChatId()
+    {
+        const string key = ConfigurationKeys.AdminTelegramChatId;
+
+        Configuration? adminTelegramChatIdConfiguration = await _configurationService.GetConfiguration(key);
+
+        if (adminTelegramChatIdConfiguration is null)
+        {
+            throw new ApplicationException($"Configuration not found. Key: {key}");
+        }
+
+        if (int.TryParse(adminTelegramChatIdConfiguration.Value, out int adminTelegramChatId) is false)
+        {
+            throw new ApplicationException($"Configuration value could not be parsed to int. Key: {key}");
+        }
+
+        return adminTelegramChatId;
     }
 }
