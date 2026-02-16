@@ -66,7 +66,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
             if (isEarthquakeOccurredNearAdmin is false)
             {
-                _logger.LogWarning($"Skipping earthquake because it is not near admin location. DistanceToAdminInKm: {distanceToAdminInKm} Location: {earthquake.Location}");
+                _logger.LogWarning($"Skipping earthquake because it is not near admin location. DistanceToAdminInKm: {distanceToAdminInKm} AdminLocationName: {adminLocation.Name} Location: {earthquake.Location}");
                 
                 return;
             }
@@ -257,7 +257,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
         if (parameters.IsEarthquakeOccurredNearAdmin)
         {
-            sb.AppendLine($"🚨{parameters.AdminLocation.Name} lokasyonuna yakın - {parameters.DistanceToAdminInKm} km");
+            sb.AppendLine($"🚨{parameters.AdminLocation.Name} lokasyonuna {parameters.DistanceToAdminInKm} km mesafede");
         }
 
         if (parameters.IsMagnitudeJumpDetected)
