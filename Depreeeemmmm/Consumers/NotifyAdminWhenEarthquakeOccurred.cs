@@ -242,32 +242,33 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
     private static string BuildTelegramAlertMessage(AdminEarthquakeAlertNotificationParameters parameters)
     {
+        string alertHeader = GetAlertHeader(parameters);
+
         StringBuilder sb = new StringBuilder();
 
-        sb.AppendLine($"📍Konum: {parameters.Earthquake.Location}");
-        sb.AppendLine($"📈Büyüklük: {parameters.Earthquake.Magnitude}");
-        sb.AppendLine($"📏Derinlik: {parameters.Earthquake.Depth} km");
-
+        sb.AppendLine(alertHeader);
+        
         TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
 
         DateTime turkeyDateTime = TimeZoneInfo.ConvertTimeFromUtc(parameters.Earthquake.OccurredAt, turkeyTimeZone);
+        
+        sb.AppendLine($"Konum: {parameters.Earthquake.Location}, Büyüklük: {parameters.Earthquake.Magnitude}, Derinlik: {parameters.Earthquake.Depth} km, Zaman: {turkeyDateTime:dd.MM.yyyy HH:mm}");
 
-        sb.AppendLine($"🕓Zaman: {turkeyDateTime:dd.MM.yyyy HH:mm} Turkey Time");
         sb.AppendLine();
 
         if (parameters.IsEarthquakeOccurredNearAdmin)
         {
-            sb.AppendLine($"🚨{parameters.AdminLocation.Name} lokasyonuna {parameters.DistanceToAdminInKm} km mesafede");
+            sb.AppendLine($"⚠️{parameters.AdminLocation.Name} lokasyonuna {parameters.DistanceToAdminInKm} km mesafede");
         }
 
         if (parameters.IsMagnitudeJumpDetected)
         {
-            sb.AppendLine("•🚨 Bölgesel büyüklük sıçraması tespit edildi");
+            sb.AppendLine("•⚠️ Bölgesel büyüklük sıçraması tespit edildi");
         }
 
         if (parameters.IsDepthTrendGoingUpward)
         {
-            sb.AppendLine("•🚨 Sarsıntılar giderek daha sığ seviyelerde oluşuyor");
+            sb.AppendLine("⚠️ Sarsıntılar giderek daha sığ seviyelerde oluşuyor");
         }
 
         if (parameters.IsMagnitudeAboveThreshold)
@@ -285,8 +286,45 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
             sb.AppendLine("⚠️ Deprem büyüklük trendi yukarı yönlü");
         }
 
-        sb.AppendLine();
+        return sb.ToString();
+    }
 
+    private static string GetAlertHeader(AdminEarthquakeAlertNotificationParameters parameters)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.Append("🚨");
+        
+        if (parameters.IsMagnitudeAboveThreshold)
+        {
+            sb.Append("🚨");
+        }
+        
+        if (parameters.IsDepthBelowThreshold)
+        {
+            sb.Append("🚨");
+        }
+        
+        if (parameters.IsMagnitudeJumpDetected)
+        {
+            sb.Append("🚨");
+        }
+        
+        if (parameters.IsDepthTrendGoingUpward)
+        {
+            sb.Append("🚨");
+        }
+        
+        if (parameters.IsClusterDensityHigh)
+        {
+            sb.Append("🚨");
+        }
+        
+        if (parameters.IsMagnitudeTrendGoingUpward)
+        {
+            sb.Append("🚨");
+        }
+        
         return sb.ToString();
     }
 
