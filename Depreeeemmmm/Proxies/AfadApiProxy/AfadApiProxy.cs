@@ -16,8 +16,6 @@ public class AfadApiProxy : IAfadApiProxy
 
     public async Task<List<QueryEventApiResponse>> QueryEvents(QueryEventApiRequest request, CancellationToken cancellationToken = default)
     {
-        throw new Exception("test");
-        
         string uri = $"/apiv2/event/filter?{request.ToQueryString()}";
 
         HttpResponseMessage responseMessage = await _httpClient.GetAsync(uri, cancellationToken);
