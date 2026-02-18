@@ -8,7 +8,7 @@ using Depreeeemmmm.Factories;
 using Depreeeemmmm.Filters;
 using Depreeeemmmm.Jobs;
 using Depreeeemmmm.Proxies.AfadApiProxy;
-using Depreeeemmmm.Proxies.TelegramApi;
+using Depreeeemmmm.Proxies.TelegramApiProxy;
 using Depreeeemmmm.Services;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;

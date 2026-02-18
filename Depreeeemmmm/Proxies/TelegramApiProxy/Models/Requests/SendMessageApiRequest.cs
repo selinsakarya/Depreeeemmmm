@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Depreeeemmmm.Proxies.TelegramApi.Models.Requests;
+namespace Depreeeemmmm.Proxies.TelegramApiProxy.Models.Requests;
 
 public class SendMessageApiRequest
 {

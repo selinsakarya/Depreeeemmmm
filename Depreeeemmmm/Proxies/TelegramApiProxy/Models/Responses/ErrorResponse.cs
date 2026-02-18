@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Depreeeemmmm.Proxies.TelegramApi.Models.Responses;
+namespace Depreeeemmmm.Proxies.TelegramApiProxy.Models.Responses;
 
 public class ErrorResponse
 {

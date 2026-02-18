@@ -1,7 +1,7 @@
-using Depreeeemmmm.Proxies.TelegramApi.Models.Requests;
-using Depreeeemmmm.Proxies.TelegramApi.Models.Responses;
+using Depreeeemmmm.Proxies.TelegramApiProxy.Models.Requests;
+using Depreeeemmmm.Proxies.TelegramApiProxy.Models.Responses;
 
-namespace Depreeeemmmm.Proxies.TelegramApi;
+namespace Depreeeemmmm.Proxies.TelegramApiProxy;
 
 public interface ITelegramApiProxy
 {

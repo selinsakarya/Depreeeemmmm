@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Depreeeemmmm.Extensions;
-using Depreeeemmmm.Proxies.TelegramApi.Models.Requests;
-using Depreeeemmmm.Proxies.TelegramApi.Models.Responses;
+using Depreeeemmmm.Proxies.TelegramApiProxy.Models.Requests;
+using Depreeeemmmm.Proxies.TelegramApiProxy.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
-using ErrorResponse = Depreeeemmmm.Proxies.TelegramApi.Models.Responses.ErrorResponse;
+using ErrorResponse = Depreeeemmmm.Proxies.TelegramApiProxy.Models.Responses.ErrorResponse;
 
-namespace Depreeeemmmm.Proxies.TelegramApi;
+namespace Depreeeemmmm.Proxies.TelegramApiProxy;
 
 public class TelegramApiProxy : ITelegramApiProxy
 {
