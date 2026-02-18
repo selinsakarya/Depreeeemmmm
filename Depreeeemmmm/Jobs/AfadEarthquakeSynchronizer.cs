@@ -59,20 +59,9 @@ public class AfadEarthquakeSynchronizer : IJob
             OrderBy = "timedesc"
         };
 
-       ProxyResponse<List<QueryEventApiResponse>> queryEventsProxyResponse = await _afadApiProxy.QueryEvents(queryEventApiRequest);
+       List<QueryEventApiResponse> queryEventApiResponse = await _afadApiProxy.QueryEvents(queryEventApiRequest);
 
-       if (queryEventsProxyResponse.HasError)
-       {
-           ProblemDetails problemDetails = queryEventsProxyResponse.ProblemDetails;
-
-           _logger.LogError($"An error occured while querying events. Status {problemDetails.Status} Title: {problemDetails.Title} Type: {problemDetails.Type} Detail: {problemDetails.Detail}");
-
-           return;
-       }
-       
-       List<QueryEventApiResponse> events = queryEventsProxyResponse.Data;
-
-       if (events.Count == 0)
+       if (queryEventApiResponse.Count == 0)
        {
            _logger.LogInformation("No events occured. Start: {StartTime} End: {EndTime}", startTime, endTime);
 
@@ -81,7 +70,7 @@ public class AfadEarthquakeSynchronizer : IJob
        
        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= startTime && e.OccurredAt < endTime).ToListAsync(context.CancellationToken);
 
-       foreach (QueryEventApiResponse @event in events)
+       foreach (QueryEventApiResponse @event in queryEventApiResponse)
        {
            bool earthquakeAlreadyExist = earthquakes.Any(e => e.IntegrationReferenceId == @event.EventId);
 
