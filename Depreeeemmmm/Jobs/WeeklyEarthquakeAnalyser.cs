@@ -104,12 +104,13 @@ public class WeeklyEarthquakeAnalyser : IJob
             {
                 sb.AppendLine("Büyüklük Dağılımı:");
 
-                foreach (KeyValuePair<double, int> mag in locationActivityReport.MagnitudeDistribution.OrderByDescending(x => x.Key))
+                foreach (KeyValuePair<double, int> mag in locationActivityReport.MagnitudeDistribution.OrderByDescending(x => x.Value))
                 {
-                    sb.AppendLine($"  {mag.Key:F1} → {mag.Value}");
+                    sb.Append($"{mag.Value} x {mag.Key:F1} / ");
                 }
             }
 
+            sb.AppendLine();
             sb.AppendLine(new string('-', 30));
         }
 
