@@ -47,7 +47,7 @@ public class WeeklyEarthquakeAnalyser : IJob
 
         if (earthquakes.Count == 0)
         {
-            _logger.LogInformation("No earthquakes found");
+            _logger.LogInformation($"No earthquakes found. Start: {sevenDaysAgo} End: {now}");
 
             return;
         }

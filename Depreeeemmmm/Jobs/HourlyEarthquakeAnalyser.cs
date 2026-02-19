@@ -47,7 +47,7 @@ public class HourlyEarthquakeAnalyser : IJob
 
         if (earthquakes.Count == 0)
         {
-            _logger.LogInformation("No earthquakes found");
+            _logger.LogInformation($"No earthquakes found. Start: {oneHourAgo} End: {now}");
 
             return;
         }

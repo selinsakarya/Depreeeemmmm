@@ -38,9 +38,9 @@ public class AfadEarthquakeSynchronizer : IJob
 
         DateTime now = DateTime.UtcNow;
         
-        DateTime fiveYearsAgo = now.AddYears(-5);
+        DateTime lastYear = now.AddYears(-1);
         
-        DateTime startTime = fiveYearsAgo;
+        DateTime startTime = lastYear;
         
         DateTime endTime = now;
 
