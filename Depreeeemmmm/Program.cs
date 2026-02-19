@@ -69,6 +69,18 @@ internal abstract class Program
                     .RepeatForever()));
         });
         
+        builder.Services.AddQuartz(q =>
+        {
+            q.ScheduleJob<DailyEarthquakeAnalyser>(trigger => trigger
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInMinutes(1)
+                    .RepeatForever()));
+            
+            // q.ScheduleJob<DailyEarthquakeAnalyser>(trigger => trigger
+            //     .WithIdentity("DailyEarthquakeAnalyserTrigger")
+            //     .WithCronSchedule("0 0 8 * * ?")); 
+        });
+        
         builder.Services.AddQuartzHostedService(options =>
         {
             options.WaitForJobsToComplete = true;
