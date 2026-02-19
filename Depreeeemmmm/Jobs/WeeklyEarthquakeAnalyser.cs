@@ -1,3 +1,4 @@
+using System.Text;
 using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
@@ -23,7 +24,7 @@ public class WeeklyEarthquakeAnalyser : IJob
     private readonly IConfigurationService _configurationService;
 
     public WeeklyEarthquakeAnalyser(
-        ILogger<WeeklyEarthquakeAnalyser> logger, 
+        ILogger<WeeklyEarthquakeAnalyser> logger,
         DepremDbContext depremDbContext,
         ITelegramApiProxy telegramApiProxy,
         IConfigurationService configurationService)
@@ -37,13 +38,12 @@ public class WeeklyEarthquakeAnalyser : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         _logger.LogInformation("WeeklyEarthquakeAnalyser is started");
-        
-        // DateTime now = new DateTime(2023, 02, 05, 21, 00, 00, DateTimeKind.Utc);
+
         DateTime now = DateTime.UtcNow;
 
-        DateTime aWeekAgo = now.AddDays(-7);
+        DateTime sevenDaysAgo = now.AddDays(-7);
 
-        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= aWeekAgo && x.Location != null).ToListAsync();
+        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= sevenDaysAgo && x.Location != null).ToListAsync();
 
         if (earthquakes.Count == 0)
         {
@@ -52,18 +52,68 @@ public class WeeklyEarthquakeAnalyser : IJob
             return;
         }
 
-        Dictionary<string, DailyLocationActivityReport> result = earthquakes.ToDailyLocationActivityReport();
+        Dictionary<string, WeeklyLocationActivityReport> result = earthquakes.ToWeeklyLocationActivityReport();
 
-        List<DailyLocationActivityReport> locationActivityReports = result.Values
+        List<WeeklyLocationActivityReport> weeklyLocationActivityReports = result.Values
             .OrderByDescending(x => x.TotalCount)
             .Take(3)
             .ToList();
-        
-        // string telegramMessage = locationActivityReports.ToTelegramMessage();
-        //
-        // await SendTelegramMessage(telegramMessage);
-        
+
+        string telegramMessage = CreateWeeklyTelegramMessage(weeklyLocationActivityReports, now, sevenDaysAgo);
+
+        await SendTelegramMessage(telegramMessage);
+
         _logger.LogInformation("WeeklyEarthquakeAnalyser is finished");
+    }
+
+    private static string CreateWeeklyTelegramMessage(List<WeeklyLocationActivityReport> locationActivityReports, DateTime now, DateTime sevenDaysAgo)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+
+        DateTime turkeyStartDate = TimeZoneInfo.ConvertTimeFromUtc(sevenDaysAgo, turkeyTimeZone);
+        
+        DateTime turkeyEndDate = TimeZoneInfo.ConvertTimeFromUtc(now, turkeyTimeZone);
+
+        sb.AppendLine("Haftalık Deprem Raporu");
+        
+        sb.AppendLine($"{turkeyStartDate:dd.MM.yyyy HH:mm} - {turkeyEndDate:dd.MM.yyyy HH:mm}");
+        
+        sb.AppendLine();
+
+        foreach (WeeklyLocationActivityReport locationActivityReport in locationActivityReports)
+        {
+            sb.AppendLine($"📍 {locationActivityReport.Location}");
+
+            sb.AppendLine($"Toplam: {locationActivityReport.TotalCount} Deprem");
+
+            sb.AppendLine($"Max: {Math.Round(locationActivityReport.MaxMagnitude, 2)}");
+
+            if (locationActivityReport.DailyStatistics.Any())
+            {
+                sb.AppendLine("Günlük Dağılım:");
+
+                foreach (KeyValuePair<DateTime, DailyStatistic> day in locationActivityReport.DailyStatistics.OrderBy(x => x.Key))
+                {
+                    sb.AppendLine($"  {day.Key:dd.MM.yyyy} → {day.Value.Count} (Max {Math.Round(day.Value.MaxMagnitude, 2)})");
+                }
+            }
+
+            if (locationActivityReport.MagnitudeDistribution.Any())
+            {
+                sb.AppendLine("Büyüklük Dağılımı:");
+
+                foreach (KeyValuePair<double, int> mag in locationActivityReport.MagnitudeDistribution.OrderByDescending(x => x.Key))
+                {
+                    sb.AppendLine($"  {mag.Key:F1} → {mag.Value}");
+                }
+            }
+
+            sb.AppendLine(new string('-', 30));
+        }
+
+        return sb.ToString();
     }
 
     private async Task SendTelegramMessage(string alertMessage)
@@ -97,7 +147,7 @@ public class WeeklyEarthquakeAnalyser : IJob
             throw new ApplicationException($"Telegram message could not be sent. Message: {alertMessage}");
         }
     }
-    
+
     private async Task<int> GetAdminTelegramChatId()
     {
         const string key = ConfigurationKeys.AdminTelegramChatId;

@@ -54,12 +54,12 @@ public class DailyEarthquakeAnalyser : IJob
 
         Dictionary<string, DailyLocationActivityReport> result = earthquakes.ToDailyLocationActivityReport();
 
-        List<DailyLocationActivityReport> locationActivityReports = result.Values
+        List<DailyLocationActivityReport> dailyLocationActivityReport = result.Values
             .OrderByDescending(x => x.TotalCount)
             .Take(3)
             .ToList();
 
-        string telegramMessage = CreateTelegramMessage(locationActivityReports, now, twentyFourHoursAgo);
+        string telegramMessage = CreateTelegramMessage(dailyLocationActivityReport, now, twentyFourHoursAgo);
 
         await SendTelegramMessage(telegramMessage);
 

@@ -65,4 +65,64 @@ public static class ListExtensions
 
         return locationActivityReport;
     }
+
+    public static Dictionary<string, WeeklyLocationActivityReport> ToWeeklyLocationActivityReport(this List<Earthquake> earthquakes)
+    {
+        Dictionary<string, WeeklyLocationActivityReport> locationActivityReport = new();
+
+        foreach (Earthquake earthquake in earthquakes)
+        {
+            if (locationActivityReport.TryGetValue(earthquake.Location, out WeeklyLocationActivityReport? locationReport))
+            {
+                locationReport.TotalCount += 1;
+            }
+            else
+            {
+                locationReport = new WeeklyLocationActivityReport
+                {
+                    Location = earthquake.Location,
+                    MaxMagnitude = earthquake.Magnitude,
+                    TotalCount = 1
+                };
+
+                locationActivityReport[earthquake.Location] = locationReport;
+            }
+
+            if (earthquake.Magnitude > locationReport.MaxMagnitude)
+            {
+                locationReport.MaxMagnitude = earthquake.Magnitude;
+            }
+
+            DateTime day = earthquake.OccurredAt.Date;
+
+            if (locationReport.DailyStatistics.TryGetValue(day, out var dailyStatistic))
+            {
+                dailyStatistic.Count++;
+            }
+            else
+            {
+                dailyStatistic = new DailyStatistic
+                {
+                    Count = 1,
+                    MaxMagnitude = earthquake.Magnitude
+                };
+
+                locationReport.DailyStatistics[day] = dailyStatistic;
+            }
+
+            if (earthquake.Magnitude > dailyStatistic.MaxMagnitude)
+            {
+                dailyStatistic.MaxMagnitude = earthquake.Magnitude;
+            }
+
+            double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
+
+            if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
+            {
+                locationReport.MagnitudeDistribution[magnitudeKey] += 1;
+            }
+        }
+
+        return locationActivityReport;
+    }
 }
