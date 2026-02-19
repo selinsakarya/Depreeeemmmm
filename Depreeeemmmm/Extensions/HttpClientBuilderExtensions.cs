@@ -19,14 +19,17 @@ public static class HttpClientBuilderExtensions
                 .WaitAndRetryAsync(retryCount, retryAttempt, onRetryAsync: async (outcome, timespan, attempt, _) =>
                 {
                     ILoggerFactory loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+                    
                     ILogger logger = loggerFactory.CreateLogger("HttpClientBuilderExtensions");
 
-                    string httpResponse = null;
+                    string? httpResponse = null;
+                    
                     int? httpStatusCode = null;
 
                     if (outcome?.Result != null)
                     {
                         httpResponse = await outcome.Result.Content.ReadAsStringAsync();
+                    
                         httpStatusCode = (int)outcome.Result.StatusCode;
                     }
 

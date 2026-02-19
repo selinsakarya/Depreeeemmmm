@@ -3,12 +3,10 @@ using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
 using Depreeeemmmm.Data.Enums;
 using Depreeeemmmm.Factories;
-using Depreeeemmmm.Proxies;
 using Depreeeemmmm.Proxies.AfadApiProxy;
 using Depreeeemmmm.Proxies.AfadApiProxy.Models.Requests;
 using Depreeeemmmm.Proxies.AfadApiProxy.Models.Responses;
 using Events;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 
