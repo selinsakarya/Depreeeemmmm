@@ -2,10 +2,6 @@ namespace Depreeeemmmm.Models;
 
 public class DailyLocationActivityReport
 {
-    public DateTime StartDate { get; set; }
-    
-    public DateTime EndDate { get; set; }
-    
     public string Location { get; set; }
    
     public int TotalCount { get; set; }

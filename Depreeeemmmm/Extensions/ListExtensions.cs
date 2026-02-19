@@ -6,7 +6,7 @@ namespace Depreeeemmmm.Extensions;
 
 public static class ListExtensions
 {
-    public static Dictionary<string, DailyLocationActivityReport> ToDailyLocationActivityReport(this List<Earthquake> earthquakes, DateTime startDate, DateTime endDate)
+    public static Dictionary<string, DailyLocationActivityReport> ToDailyLocationActivityReport(this List<Earthquake> earthquakes)
     {
         Dictionary<string, DailyLocationActivityReport> locationActivityReport = new Dictionary<string, DailyLocationActivityReport>();
 
@@ -22,9 +22,7 @@ public static class ListExtensions
                 {
                     Location = earthquake.Location,
                     MaxMagnitude = earthquake.Magnitude,
-                    TotalCount = 1,
-                    StartDate =  startDate,
-                    EndDate = endDate
+                    TotalCount = 1
                 };
 
                 locationActivityReport[earthquake.Location] = locationReport;

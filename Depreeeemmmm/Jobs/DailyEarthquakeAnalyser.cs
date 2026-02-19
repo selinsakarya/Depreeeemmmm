@@ -52,7 +52,7 @@ public class DailyEarthquakeAnalyser : IJob
             return;
         }
 
-        Dictionary<string, DailyLocationActivityReport> result = earthquakes.ToDailyLocationActivityReport(now, twentyFourHoursAgo);
+        Dictionary<string, DailyLocationActivityReport> result = earthquakes.ToDailyLocationActivityReport();
 
         List<DailyLocationActivityReport> locationActivityReports = result.Values
             .OrderByDescending(x => x.TotalCount)
