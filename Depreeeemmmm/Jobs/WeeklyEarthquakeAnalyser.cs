@@ -38,11 +38,12 @@ public class WeeklyEarthquakeAnalyser : IJob
     {
         _logger.LogInformation("WeeklyEarthquakeAnalyser is started");
         
+        // DateTime now = new DateTime(2023, 02, 05, 21, 00, 00, DateTimeKind.Utc);
         DateTime now = DateTime.UtcNow;
 
         DateTime aWeekAgo = now.AddDays(-7);
 
-        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= aWeekAgo).ToListAsync();
+        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= aWeekAgo && x.Location != null).ToListAsync();
 
         if (earthquakes.Count == 0)
         {

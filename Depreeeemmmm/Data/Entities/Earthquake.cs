@@ -21,7 +21,7 @@ public class Earthquake
     
     public EarthquakeSource Source { get; set; }
 
-    public string Location { get; set; }
+    public string? Location { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

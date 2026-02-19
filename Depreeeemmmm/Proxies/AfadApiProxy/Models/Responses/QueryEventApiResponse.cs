@@ -27,5 +27,5 @@ public class QueryEventApiResponse
     public DateTime Date { get; set; }
 
     [JsonPropertyName("location")]
-    public string Location { get; set; }
+    public string? Location { get; set; }
 }
