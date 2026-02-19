@@ -12,6 +12,7 @@ using Quartz;
 
 namespace Depreeeemmmm.Jobs;
 
+[DisallowConcurrentExecution]
 public class AfadEarthquakeSynchronizer : IJob
 {
     private readonly ILogger<AfadEarthquakeSynchronizer> _logger;
@@ -37,9 +38,9 @@ public class AfadEarthquakeSynchronizer : IJob
 
         DateTime now = DateTime.UtcNow;
         
-        DateTime anHourAgo = now.AddHours(-1);
+        DateTime fiveYearsAgo = now.AddYears(-5);
         
-        DateTime startTime = anHourAgo;
+        DateTime startTime = fiveYearsAgo;
         
         DateTime endTime = now;
 
@@ -97,14 +98,14 @@ public class AfadEarthquakeSynchronizer : IJob
 
            _depremDbContext.Earthquakes.Add(earthquake);
 
-           EarthquakeOccurred earthquakeOccurred = new EarthquakeOccurred
-           {
-               EarthquakeSecondaryUniqueId = secondaryUniqueId
-           };
-
-           OutboxMessage earthquakeOccuredOutboxMessage = _outboxMessageFactory.From(earthquakeOccurred, now);
-
-           _depremDbContext.OutboxMessages.Add(earthquakeOccuredOutboxMessage);
+           // EarthquakeOccurred earthquakeOccurred = new EarthquakeOccurred
+           // {
+           //     EarthquakeSecondaryUniqueId = secondaryUniqueId
+           // };
+           //
+           // OutboxMessage earthquakeOccuredOutboxMessage = _outboxMessageFactory.From(earthquakeOccurred, now);
+           //
+           // _depremDbContext.OutboxMessages.Add(earthquakeOccuredOutboxMessage);
            
            _logger.LogWarning("An earthquake occurred. EventMagnitude: {EventMagnitude} EventLocation: {EventLocation} Date: {EventDate}", @event.Magnitude, @event.Location, @event.Date);
        }

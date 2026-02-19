@@ -14,6 +14,7 @@ using Quartz;
 
 namespace Depreeeemmmm.Jobs;
 
+[DisallowConcurrentExecution]
 public class HourlyEarthquakeAnalyser : IJob
 {
     private readonly ILogger<HourlyEarthquakeAnalyser> _logger;
