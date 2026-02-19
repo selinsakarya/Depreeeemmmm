@@ -75,23 +75,18 @@ internal abstract class Program
                 .WithCronSchedule("0 0 * * * ?"));
         });
 
-        // builder.Services.AddQuartz(q =>
-        // {
-        //     q.ScheduleJob<DailyEarthquakeAnalyser>(trigger => trigger
-        //         .WithCronSchedule("0 0 21 * * ?", x =>
-        //             x.InTimeZone(TimeZoneInfo.Utc)));
-        // });
+        builder.Services.AddQuartz(q =>
+        {
+            q.ScheduleJob<DailyEarthquakeAnalyser>(trigger => trigger
+                .WithCronSchedule("0 0 21 * * ?", x =>
+                    x.InTimeZone(TimeZoneInfo.Utc)));
+        });
 
         builder.Services.AddQuartz(q =>
         {
             q.ScheduleJob<WeeklyEarthquakeAnalyser>(trigger => trigger
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInMinutes(1)
-                    .RepeatForever()));
-            
-            // q.ScheduleJob<WeeklyEarthquakeAnalyser>(trigger => trigger
-            //     .WithCronSchedule("0 0 15 ? * SUN", x =>
-            //         x.InTimeZone(TimeZoneInfo.Utc)));
+                .WithCronSchedule("0 0 15 ? * SUN", x =>
+                    x.InTimeZone(TimeZoneInfo.Utc)));
         });
 
         builder.Services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
