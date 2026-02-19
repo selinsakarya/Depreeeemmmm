@@ -43,7 +43,7 @@ public class WeeklyEarthquakeAnalyser : IJob
 
         DateTime sevenDaysAgo = now.AddDays(-7);
 
-        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= sevenDaysAgo && x.Location != null).ToListAsync();
+        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= sevenDaysAgo && e.OccurredAt < now && e.Location != null).ToListAsync();
 
         if (earthquakes.Count == 0)
         {
@@ -56,7 +56,7 @@ public class WeeklyEarthquakeAnalyser : IJob
 
         List<WeeklyLocationActivityReport> weeklyLocationActivityReports = result.Values
             .OrderByDescending(x => x.TotalCount)
-            .Take(3)
+            .Take(10)
             .ToList();
 
         string telegramMessage = CreateWeeklyTelegramMessage(weeklyLocationActivityReports, now, sevenDaysAgo);

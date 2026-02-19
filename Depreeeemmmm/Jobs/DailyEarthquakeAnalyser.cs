@@ -43,7 +43,7 @@ public class DailyEarthquakeAnalyser : IJob
 
         DateTime twentyFourHoursAgo = now.AddHours(-24);
 
-        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= twentyFourHoursAgo).ToListAsync();
+        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= twentyFourHoursAgo && e.OccurredAt < now && e.Location != null).ToListAsync();
 
         if (earthquakes.Count == 0)
         {
@@ -56,7 +56,7 @@ public class DailyEarthquakeAnalyser : IJob
 
         List<DailyLocationActivityReport> dailyLocationActivityReport = result.Values
             .OrderByDescending(x => x.TotalCount)
-            .Take(3)
+            .Take(10)
             .ToList();
 
         string telegramMessage = CreateTelegramMessage(dailyLocationActivityReport, now, twentyFourHoursAgo);
