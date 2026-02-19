@@ -6,19 +6,19 @@ namespace Depreeeemmmm.Extensions;
 
 public static class ListExtensions
 {
-    public static Dictionary<string, LocationActivityReport> ToLocationActivityReport(this List<Earthquake> earthquakes, LocationActivityReportType type, DateTime startDate, DateTime endDate)
+    public static Dictionary<string, DailyLocationActivityReport> ToLocationActivityReport(this List<Earthquake> earthquakes, LocationActivityReportType type, DateTime startDate, DateTime endDate)
     {
-        Dictionary<string, LocationActivityReport> locationActivityReport = new Dictionary<string, LocationActivityReport>();
+        Dictionary<string, DailyLocationActivityReport> locationActivityReport = new Dictionary<string, DailyLocationActivityReport>();
 
         foreach (Earthquake earthquake in earthquakes)
         {
-            if (locationActivityReport.TryGetValue(earthquake.Location, out LocationActivityReport? locationReport))
+            if (locationActivityReport.TryGetValue(earthquake.Location, out DailyLocationActivityReport? locationReport))
             {
                 locationReport.TotalCount += 1;
             }
             else
             {
-                locationReport = new LocationActivityReport
+                locationReport = new DailyLocationActivityReport
                 {
                     Location = earthquake.Location,
                     MaxMagnitude = earthquake.Magnitude,
@@ -69,13 +69,13 @@ public static class ListExtensions
         return locationActivityReport;
     }
     
-    public static string ToTelegramMessage(this List<LocationActivityReport> locationActivityReports)
+    public static string ToTelegramMessage(this List<DailyLocationActivityReport> locationActivityReports)
     {
         StringBuilder sb = new StringBuilder();
 
         TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
         
-        foreach (LocationActivityReport locationActivityReport in locationActivityReports)
+        foreach (DailyLocationActivityReport locationActivityReport in locationActivityReports)
         {
             sb.AppendLine($"{locationActivityReport.Type} Deprem Özeti");
             

@@ -1,6 +1,6 @@
 namespace Depreeeemmmm.Models;
 
-public class LocationActivityReport
+public class DailyLocationActivityReport
 {
     public DateTime StartDate { get; set; }
     
