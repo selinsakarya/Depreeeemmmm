@@ -1,3 +1,4 @@
+using System.Text;
 using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
@@ -23,7 +24,7 @@ public class DailyEarthquakeAnalyser : IJob
     private readonly IConfigurationService _configurationService;
 
     public DailyEarthquakeAnalyser(
-        ILogger<DailyEarthquakeAnalyser> logger, 
+        ILogger<DailyEarthquakeAnalyser> logger,
         DepremDbContext depremDbContext,
         ITelegramApiProxy telegramApiProxy,
         IConfigurationService configurationService)
@@ -37,7 +38,7 @@ public class DailyEarthquakeAnalyser : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         _logger.LogInformation("DailyEarthquakeAnalyser is started");
-        
+
         DateTime now = DateTime.UtcNow;
 
         DateTime twentyFourHoursAgo = now.AddHours(-24);
@@ -57,12 +58,62 @@ public class DailyEarthquakeAnalyser : IJob
             .OrderByDescending(x => x.TotalCount)
             .Take(3)
             .ToList();
-        
-        string telegramMessage = locationActivityReports.ToTelegramMessage();
+
+        string telegramMessage = CreateTelegramMessage(locationActivityReports, now, twentyFourHoursAgo);
 
         await SendTelegramMessage(telegramMessage);
-        
+
         _logger.LogInformation("DailyEarthquakeAnalyser is finished");
+    }
+
+    private static string CreateTelegramMessage(List<DailyLocationActivityReport> locationActivityReports, DateTime now, DateTime twentyFourHoursAgo)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        
+        DateTime turkeyStartDate = TimeZoneInfo.ConvertTimeFromUtc(twentyFourHoursAgo, turkeyTimeZone);
+
+        DateTime turkeyEndDate = TimeZoneInfo.ConvertTimeFromUtc(now, turkeyTimeZone);
+
+        sb.AppendLine("Günlük Deprem Raporu");
+        
+        sb.AppendLine($"{turkeyEndDate} - {turkeyStartDate}");
+
+        foreach (DailyLocationActivityReport locationActivityReport in locationActivityReports)
+        {
+            sb.AppendLine($"📍 {locationActivityReport.Location}");
+
+            sb.AppendLine($"Toplam: {locationActivityReport.TotalCount} Deprem");
+
+            sb.AppendLine($"Max: {Math.Round(locationActivityReport.MaxMagnitude, 2)}");
+
+            if (locationActivityReport.HourlyStatistics.Any())
+            {
+                sb.AppendLine("Saatlik Dağılım:");
+
+                foreach (KeyValuePair<int, HourlyStatistic> hour in locationActivityReport.HourlyStatistics.OrderBy(x => x.Key))
+                {
+                    sb.AppendLine($"  {hour.Key:00}:00 → {hour.Value.Count} (Max {Math.Round(hour.Value.MaxMagnitude, 2)})");
+                }
+            }
+
+            if (locationActivityReport.MagnitudeDistribution.Any())
+            {
+                sb.AppendLine("Büyüklük Dağılımı:");
+
+                foreach (var mag in locationActivityReport.MagnitudeDistribution.OrderByDescending(x => x.Key))
+                {
+                    sb.AppendLine($"  {mag.Key:F1} → {mag.Value}");
+                }
+            }
+
+            sb.AppendLine(new string('-', 30));
+        }
+
+        string telegramMessage = sb.ToString();
+
+        return telegramMessage;
     }
 
     private async Task SendTelegramMessage(string alertMessage)
@@ -96,7 +147,7 @@ public class DailyEarthquakeAnalyser : IJob
             throw new ApplicationException($"Telegram message could not be sent. Message: {alertMessage}");
         }
     }
-    
+
     private async Task<int> GetAdminTelegramChatId()
     {
         const string key = ConfigurationKeys.AdminTelegramChatId;

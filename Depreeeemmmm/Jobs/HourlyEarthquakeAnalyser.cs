@@ -58,9 +58,9 @@ public class HourlyEarthquakeAnalyser : IJob
             .Take(3)
             .ToList();
         
-        string telegramMessage = locationActivityReports.ToTelegramMessage();
-
-        await SendTelegramMessage(telegramMessage);
+        // string telegramMessage = locationActivityReports.ToTelegramMessage();
+        //
+        // await SendTelegramMessage(telegramMessage);
         
         _logger.LogInformation("HourlyEarthquakeAnalyser is finished");
     }
