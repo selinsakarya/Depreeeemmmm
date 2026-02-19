@@ -6,7 +6,7 @@ namespace Depreeeemmmm.Extensions;
 
 public static class ListExtensions
 {
-    public static Dictionary<string, DailyLocationActivityReport> ToLocationActivityReport(this List<Earthquake> earthquakes, LocationActivityReportType type, DateTime startDate, DateTime endDate)
+    public static Dictionary<string, DailyLocationActivityReport> ToLocationActivityReport(this List<Earthquake> earthquakes, DateTime startDate, DateTime endDate)
     {
         Dictionary<string, DailyLocationActivityReport> locationActivityReport = new Dictionary<string, DailyLocationActivityReport>();
 
@@ -23,7 +23,6 @@ public static class ListExtensions
                     Location = earthquake.Location,
                     MaxMagnitude = earthquake.Magnitude,
                     TotalCount = 1,
-                    Type = type,
                     StartDate =  startDate,
                     EndDate = endDate
                 };
@@ -77,8 +76,6 @@ public static class ListExtensions
         
         foreach (DailyLocationActivityReport locationActivityReport in locationActivityReports)
         {
-            sb.AppendLine($"{locationActivityReport.Type} Deprem Özeti");
-            
             DateTime turkeyStartDate = TimeZoneInfo.ConvertTimeFromUtc(locationActivityReport.StartDate, turkeyTimeZone);
         
             DateTime turkeyEndDate = TimeZoneInfo.ConvertTimeFromUtc(locationActivityReport.EndDate, turkeyTimeZone);

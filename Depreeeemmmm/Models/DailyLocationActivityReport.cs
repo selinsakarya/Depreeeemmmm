@@ -6,8 +6,6 @@ public class DailyLocationActivityReport
     
     public DateTime EndDate { get; set; }
     
-    public LocationActivityReportType Type { get; set; }
-    
     public string Location { get; set; }
    
     public int TotalCount { get; set; }
@@ -24,15 +22,4 @@ public class HourlyStatistic
     public int Count { get; set; }
     
     public double MaxMagnitude { get; set; }
-}
-
-public enum LocationActivityReportType
-{
-    Unknown = 0,
-    
-    Daily = 1,
-    
-    Hourly = 2,
-    
-    Weekly = 3
 }
