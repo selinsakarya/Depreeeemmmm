@@ -23,7 +23,7 @@ internal abstract class Program
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-        
+
         builder.Services.AddControllers(options => options.Filters.Add(new ProblemDetailsExceptionFilter()))
             .AddJsonOptions(options =>
             {
@@ -36,9 +36,9 @@ internal abstract class Program
                 fv.DisableDataAnnotationsValidation = true;
                 fv.RegisterValidatorsFromAssemblyContaining<Program>();
                 fv.ImplicitlyValidateChildProperties = true;
-            });        
+            });
         builder.Services.AddOpenApi();
-        
+
         builder.Host.UseSerilog((context, cfg) =>
         {
             cfg
@@ -53,14 +53,14 @@ internal abstract class Program
                 .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
                 .ReadFrom.Configuration(context.Configuration);
         });
-        
+
         builder.Services.AddSwaggerGen(c =>
         {
             c.CustomSchemaIds(t => t.FullName);
 
             c.SwaggerDoc("v1", new() { Title = "Depreeeemmmm", Version = "v1" });
         });
-        
+
         builder.Services.AddQuartz(q =>
         {
             q.ScheduleJob<AfadEarthquakeSynchronizer>(trigger => trigger
@@ -68,31 +68,39 @@ internal abstract class Program
                     .WithIntervalInMinutes(1)
                     .RepeatForever()));
         });
-        
+
+        builder.Services.AddQuartz(q =>
+        {
+            q.ScheduleJob<HourlyEarthquakeAnalyser>(trigger => trigger
+                .WithIdentity("HourlyEarthquakeAnalyserTrigger")
+                .WithCronSchedule("0 0 * * * ?"));
+        });
+
         builder.Services.AddQuartz(q =>
         {
             q.ScheduleJob<DailyEarthquakeAnalyser>(trigger => trigger
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInMinutes(1)
-                    .RepeatForever()));
-            
-            // q.ScheduleJob<DailyEarthquakeAnalyser>(trigger => trigger
-            //     .WithIdentity("DailyEarthquakeAnalyserTrigger")
-            //     .WithCronSchedule("0 0 8 * * ?")); 
+                .WithIdentity("HourlyEarthquakeAnalyserTrigger")
+                .WithCronSchedule("0 0 21 * * ?", x =>
+                    x.InTimeZone(TimeZoneInfo.Utc)));
         });
-        
-        builder.Services.AddQuartzHostedService(options =>
+
+        builder.Services.AddQuartz(q =>
         {
-            options.WaitForJobsToComplete = true;
+            q.ScheduleJob<WeeklyEarthquakeAnalyser>(trigger => trigger
+                .WithIdentity("WeeklyEarthquakeAnalyserTrigger")
+                .WithCronSchedule("0 0 15 ? * SUN", x =>
+                    x.InTimeZone(TimeZoneInfo.Utc)));
         });
-        
+
+        builder.Services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
+
         builder.Services.AddDbContext<DepremDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString")));
-        
+
         builder.Services.AddDbContext<DepremDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DepremDbConnectionString"), x => x.UseNetTopologySuite()));
-        
+
         builder.Services.AddMassTransit(builder.Configuration);
-        
+
         builder.Services.AddHttpClient<IAfadApiProxy, AfadApiProxy>(cfg =>
             {
                 cfg.BaseAddress = new Uri(builder.Configuration["Afad:Url"]!);
@@ -104,7 +112,7 @@ internal abstract class Program
             .AddHttpRetryPolicyHandler()
             .AddCircuitBreakerPolicy(200, TimeSpan.FromSeconds(30));
 
-        string? telegramBotUri = $"{ Environment.GetEnvironmentVariable("TELEGRAM_BOT_URI")}";
+        string? telegramBotUri = $"{Environment.GetEnvironmentVariable("TELEGRAM_BOT_URI")}";
 
         builder.Services.AddHttpClient<ITelegramApiProxy, TelegramApiProxy>(cfg =>
             {
@@ -118,9 +126,9 @@ internal abstract class Program
             .AddCircuitBreakerPolicy(200, TimeSpan.FromSeconds(30));
 
         builder.Services.AddMemoryCache();
-        
+
         builder.Services.AddHostedService<OutboxMessagePublisherHostedService>();
-        
+
         builder.Services.AddScoped<IOutboxMessagePublisherService, OutboxMessagePublisherService>();
         builder.Services.AddScoped<IOutboxMessageFactory, OutboxMessageFactory>();
         builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
@@ -130,11 +138,11 @@ internal abstract class Program
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
-            
+
             app.UseSwagger();
 
             app.UseSwaggerUI();
-        
+
             app.MapGet("/", () => Results.Redirect("/swagger/index.html")).ExcludeFromDescription();
         }
 

@@ -30,5 +30,9 @@ public enum LocationActivityReportType
 {
     Unknown = 0,
     
-    Daily = 1
+    Daily = 1,
+    
+    Hourly = 2,
+    
+    Weekly = 3
 }
