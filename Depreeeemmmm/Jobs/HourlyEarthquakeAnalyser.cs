@@ -1,3 +1,4 @@
+using System.Text;
 using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
@@ -40,9 +41,9 @@ public class HourlyEarthquakeAnalyser : IJob
         
         DateTime now = DateTime.UtcNow;
 
-        DateTime anHourAgo = now.AddHours(-1);
+        DateTime oneHourAgo = now.AddHours(-1);
 
-        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= anHourAgo).ToListAsync();
+        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(x => x.OccurredAt >= oneHourAgo).ToListAsync();
 
         if (earthquakes.Count == 0)
         {
@@ -51,18 +52,70 @@ public class HourlyEarthquakeAnalyser : IJob
             return;
         }
 
-        Dictionary<string, DailyLocationActivityReport> result = earthquakes.ToDailyLocationActivityReport();
+        Dictionary<string, HourlyLocationActivityReport> result = earthquakes.ToHourlyLocationActivityReport();
 
-        List<DailyLocationActivityReport> locationActivityReports = result.Values
+        List<HourlyLocationActivityReport> hourlyLocationActivityReports = result.Values
             .OrderByDescending(x => x.TotalCount)
             .Take(3)
             .ToList();
         
-        // string telegramMessage = locationActivityReports.ToTelegramMessage();
-        //
-        // await SendTelegramMessage(telegramMessage);
+        string telegramMessage = CreateTelegramMessage(hourlyLocationActivityReports, now, oneHourAgo);
+        
+        await SendTelegramMessage(telegramMessage);
         
         _logger.LogInformation("HourlyEarthquakeAnalyser is finished");
+    }
+    
+    private static string CreateTelegramMessage(List<HourlyLocationActivityReport> locationActivityReports, DateTime now, DateTime oneHourAgo)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+
+        DateTime turkeyStartDate = TimeZoneInfo.ConvertTimeFromUtc(oneHourAgo, turkeyTimeZone);
+       
+        DateTime turkeyEndDate = TimeZoneInfo.ConvertTimeFromUtc(now, turkeyTimeZone);
+
+        sb.AppendLine("Saatlik Deprem Raporu");
+        
+        sb.AppendLine($"{turkeyStartDate:dd.MM.yyyy HH:mm} - {turkeyEndDate:dd.MM.yyyy HH:mm}");
+        
+        sb.AppendLine();
+
+        foreach (HourlyLocationActivityReport locationActivityReport in locationActivityReports)
+        {
+            sb.AppendLine($"📍 {locationActivityReport.Location}");
+           
+            sb.AppendLine($"Toplam: {locationActivityReport.TotalCount} Deprem");
+            
+            sb.AppendLine($"Max: {Math.Round(locationActivityReport.MaxMagnitude, 2)}");
+
+            if (locationActivityReport.MinuteStatistics.Any())
+            {
+                sb.AppendLine("Dakikalık Dağılım:");
+
+                foreach (KeyValuePair<DateTime, MinuteStatistic> minute in locationActivityReport.MinuteStatistics.OrderBy(x => x.Key))
+                {
+                    DateTime turkeyMinute = TimeZoneInfo.ConvertTimeFromUtc(minute.Key, turkeyTimeZone);
+
+                    sb.AppendLine($"{turkeyMinute:HH:mm} → {minute.Value.Count} (Max {Math.Round(minute.Value.MaxMagnitude, 2)})");
+                }
+            }
+
+            if (locationActivityReport.MagnitudeDistribution.Any())
+            {
+                sb.AppendLine("Büyüklük Dağılımı:");
+
+                foreach (KeyValuePair<double, int> mag in locationActivityReport.MagnitudeDistribution.OrderByDescending(x => x.Key))
+                {
+                    sb.AppendLine($"  {mag.Key:F1} → {mag.Value}");
+                }
+            }
+
+            sb.AppendLine(new string('-', 30));
+        }
+
+        return sb.ToString();
     }
 
     private async Task SendTelegramMessage(string alertMessage)

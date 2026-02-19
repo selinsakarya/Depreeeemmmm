@@ -125,4 +125,66 @@ public static class ListExtensions
 
         return locationActivityReport;
     }
+    
+    public static Dictionary<string, HourlyLocationActivityReport> ToHourlyLocationActivityReport(this List<Earthquake> earthquakes)
+    {
+        Dictionary<string, HourlyLocationActivityReport> locationActivityReport = new();
+
+        foreach (Earthquake earthquake in earthquakes)
+        {
+            if (locationActivityReport.TryGetValue(earthquake.Location, out HourlyLocationActivityReport? locationReport))
+            {
+                locationReport.TotalCount += 1;
+            }
+            else
+            {
+                locationReport = new HourlyLocationActivityReport
+                {
+                    Location = earthquake.Location,
+                    MaxMagnitude = earthquake.Magnitude,
+                    TotalCount = 1
+                };
+
+                locationActivityReport[earthquake.Location] = locationReport;
+            }
+
+            if (earthquake.Magnitude > locationReport.MaxMagnitude)
+            {
+                locationReport.MaxMagnitude = earthquake.Magnitude;
+            }
+
+            DateTime minuteKey = earthquake.OccurredAt
+                .AddSeconds(-earthquake.OccurredAt.Second)
+                .AddMilliseconds(-earthquake.OccurredAt.Millisecond);
+
+            if (locationReport.MinuteStatistics.TryGetValue(minuteKey, out var minuteStatistic))
+            {
+                minuteStatistic.Count++;
+            }
+            else
+            {
+                minuteStatistic = new MinuteStatistic
+                {
+                    Count = 1,
+                    MaxMagnitude = earthquake.Magnitude
+                };
+
+                locationReport.MinuteStatistics[minuteKey] = minuteStatistic;
+            }
+
+            if (earthquake.Magnitude > minuteStatistic.MaxMagnitude)
+            {
+                minuteStatistic.MaxMagnitude = earthquake.Magnitude;
+            }
+
+            double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
+
+            if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
+            {
+                locationReport.MagnitudeDistribution[magnitudeKey] += 1;
+            }
+        }
+
+        return locationActivityReport;
+    }
 }
