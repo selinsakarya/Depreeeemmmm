@@ -39,8 +39,7 @@ public class WeeklyEarthquakeAnalyser : IJob
     {
         _logger.LogInformation("WeeklyEarthquakeAnalyser is started");
 
-        // DateTime now = DateTime.UtcNow;
-        DateTime now = new DateTime(2025, 08, 10, 16, 53, 0, 0, 0, DateTimeKind.Utc);
+        DateTime now = DateTime.UtcNow;
 
         DateTime sevenDaysAgo = now.AddDays(-7);
 
