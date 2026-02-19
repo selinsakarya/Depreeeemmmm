@@ -39,7 +39,8 @@ public class WeeklyEarthquakeAnalyser : IJob
     {
         _logger.LogInformation("WeeklyEarthquakeAnalyser is started");
 
-        DateTime now = DateTime.UtcNow;
+        // DateTime now = DateTime.UtcNow;
+        DateTime now = new DateTime(2025, 08, 10, 16, 53, 0, 0, 0, DateTimeKind.Utc);
 
         DateTime sevenDaysAgo = now.AddDays(-7);
 
@@ -56,7 +57,7 @@ public class WeeklyEarthquakeAnalyser : IJob
 
         List<WeeklyLocationActivityReport> weeklyLocationActivityReports = result.Values
             .OrderByDescending(x => x.TotalCount)
-            .Take(10)
+            .Take(3)
             .ToList();
 
         string telegramMessage = CreateWeeklyTelegramMessage(weeklyLocationActivityReports, now, sevenDaysAgo);

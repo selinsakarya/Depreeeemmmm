@@ -56,7 +56,7 @@ public class HourlyEarthquakeAnalyser : IJob
 
         List<HourlyLocationActivityReport> hourlyLocationActivityReports = result.Values
             .OrderByDescending(x => x.TotalCount)
-            .Take(10)
+            .Take(3)
             .ToList();
         
         string telegramMessage = CreateTelegramMessage(hourlyLocationActivityReports, now, oneHourAgo);
