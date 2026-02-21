@@ -78,7 +78,7 @@ public class DailyEarthquakeAnalyser : IJob
 
         sb.AppendLine("Günlük Deprem Raporu");
         
-        sb.AppendLine($"{turkeyEndDate} - {turkeyStartDate}");
+        sb.AppendLine($"{turkeyStartDate} - {turkeyEndDate}");
 
         foreach (DailyLocationActivityReport locationActivityReport in locationActivityReports)
         {

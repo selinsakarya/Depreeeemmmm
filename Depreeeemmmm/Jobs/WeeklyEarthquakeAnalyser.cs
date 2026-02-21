@@ -78,7 +78,7 @@ public class WeeklyEarthquakeAnalyser : IJob
 
         sb.AppendLine("Haftalık Deprem Raporu");
         
-        sb.AppendLine($"{turkeyStartDate:dd.MM.yyyy HH:mm} - {turkeyEndDate:dd.MM.yyyy HH:mm}");
+        sb.AppendLine($"{turkeyStartDate} - {turkeyEndDate}");
         
         sb.AppendLine();
 
