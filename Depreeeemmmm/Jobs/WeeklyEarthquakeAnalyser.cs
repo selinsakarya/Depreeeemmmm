@@ -111,6 +111,7 @@ public class WeeklyEarthquakeAnalyser : IJob
             }
 
             sb.AppendLine();
+            
             sb.AppendLine(new string('-', 30));
         }
 

@@ -109,6 +109,7 @@ public class DailyEarthquakeAnalyser : IJob
             }
 
             sb.AppendLine();
+            
             sb.AppendLine(new string('-', 30));
         }
 
