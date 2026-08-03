@@ -344,12 +344,12 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         {
             ProblemDetails problemDetails = sendMessageProxyResponse.ProblemDetails;
 
-            if (problemDetails.Status is StatusCodes.Status500InternalServerError or StatusCodes.Status408RequestTimeout)
+            if (problemDetails.Status is >= StatusCodes.Status500InternalServerError or >= StatusCodes.Status400BadRequest)
             {
-                throw new Exception("A transient error occured while sending message");
+                throw new Exception($"A transient error occured while sending message. Status: {problemDetails.Status} Title: {problemDetails.Title} Type: {problemDetails.Type} Detail: {problemDetails.Detail}");
             }
 
-            throw new ApplicationException($"An error occured while sending message. Message: {alertMessage}");
+            throw new ApplicationException($"A transient error occured while sending message. Status: {problemDetails.Status} Title: {problemDetails.Title} Type: {problemDetails.Type} Detail: {problemDetails.Detail}");
         }
 
         SendMessageApiResponse sendMessageApiResponse = sendMessageProxyResponse.Data;
