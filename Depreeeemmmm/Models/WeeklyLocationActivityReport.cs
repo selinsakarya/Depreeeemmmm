@@ -11,6 +11,8 @@ public class WeeklyLocationActivityReport
     public Dictionary<DateTime, DailyStatistic> DailyStatistics { get; set; } = new();
     
     public Dictionary<double, int> MagnitudeDistribution { get; set; } = new();
+
+    public LocationActivityInsights Insights { get; set; } = new();
 }
 
 public class DailyStatistic

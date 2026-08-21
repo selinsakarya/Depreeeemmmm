@@ -11,6 +11,8 @@ public class DailyLocationActivityReport
     public Dictionary<int, HourlyStatistic> HourlyStatistics { get; set; } = new Dictionary<int, HourlyStatistic>();
     
     public Dictionary<double, int> MagnitudeDistribution { get; set; } = new  Dictionary<double, int>();
+
+    public LocationActivityInsights Insights { get; set; } = new();
 }
 
 public class HourlyStatistic

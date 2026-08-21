@@ -1,4 +1,3 @@
-using System.Text;
 using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
@@ -40,10 +39,12 @@ public class DailyEarthquakeAnalyser : IJob
         _logger.LogInformation("DailyEarthquakeAnalyser is started");
 
         DateTime now = DateTime.UtcNow;
-
         DateTime twentyFourHoursAgo = now.AddHours(-24);
+        DateTime fortyEightHoursAgo = now.AddHours(-48);
 
-        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= twentyFourHoursAgo && e.OccurredAt < now && e.Location != null).ToListAsync();
+        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking()
+            .Where(e => e.OccurredAt >= twentyFourHoursAgo && e.OccurredAt < now && e.Location != null)
+            .ToListAsync(context.CancellationToken);
 
         if (earthquakes.Count == 0)
         {
@@ -52,70 +53,26 @@ public class DailyEarthquakeAnalyser : IJob
             return;
         }
 
-        Dictionary<string, DailyLocationActivityReport> result = earthquakes.ToDailyLocationActivityReport();
+        List<Earthquake> previousPeriodEarthquakes = await _depremDbContext.Earthquakes.AsNoTracking()
+            .Where(e => e.OccurredAt >= fortyEightHoursAgo && e.OccurredAt < twentyFourHoursAgo && e.Location != null)
+            .ToListAsync(context.CancellationToken);
 
-        List<DailyLocationActivityReport> dailyLocationActivityReport = result.Values
-            .OrderByDescending(x => x.TotalCount)
+        Dictionary<string, int> previousCountByLocation = previousPeriodEarthquakes.ToLocationCountByLocation();
+        PeriodEarthquakeSummary periodSummary = EarthquakeReportAnalyzer.AnalyzePeriod(earthquakes, previousPeriodEarthquakes);
+
+        Dictionary<string, DailyLocationActivityReport> result = earthquakes.ToDailyLocationActivityReport(previousCountByLocation);
+
+        List<DailyLocationActivityReport> dailyLocationActivityReports = result.Values
+            .OrderByDescending(x => x.Insights.ActivityScore)
+            .ThenByDescending(x => x.TotalCount)
             .Take(3)
             .ToList();
 
-        string telegramMessage = CreateTelegramMessage(dailyLocationActivityReport, now, twentyFourHoursAgo);
+        string telegramMessage = EarthquakeReportMessageBuilder.BuildDailyReport(periodSummary, dailyLocationActivityReports, twentyFourHoursAgo, now);
 
         await SendTelegramMessage(telegramMessage);
 
         _logger.LogInformation("DailyEarthquakeAnalyser is finished");
-    }
-
-    private static string CreateTelegramMessage(List<DailyLocationActivityReport> locationActivityReports, DateTime now, DateTime twentyFourHoursAgo)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
-        
-        DateTime turkeyStartDate = TimeZoneInfo.ConvertTimeFromUtc(twentyFourHoursAgo, turkeyTimeZone);
-
-        DateTime turkeyEndDate = TimeZoneInfo.ConvertTimeFromUtc(now, turkeyTimeZone);
-
-        sb.AppendLine("Günlük Deprem Raporu");
-        
-        sb.AppendLine($"{turkeyStartDate} - {turkeyEndDate}");
-
-        foreach (DailyLocationActivityReport locationActivityReport in locationActivityReports)
-        {
-            sb.AppendLine($"📍 {locationActivityReport.Location}");
-
-            sb.AppendLine($"Toplam: {locationActivityReport.TotalCount} Deprem");
-
-            sb.AppendLine($"Max: {Math.Round(locationActivityReport.MaxMagnitude, 2)}");
-
-            if (locationActivityReport.HourlyStatistics.Any())
-            {
-                sb.AppendLine("Saatlik Dağılım:");
-
-                foreach (KeyValuePair<int, HourlyStatistic> hour in locationActivityReport.HourlyStatistics.OrderBy(x => x.Key))
-                {
-                    sb.AppendLine($"  {hour.Key:00}:00 → {hour.Value.Count} (Max {Math.Round(hour.Value.MaxMagnitude, 2)})");
-                }
-            }
-
-            if (locationActivityReport.MagnitudeDistribution.Any())
-            {
-                sb.AppendLine("Büyüklük Dağılımı:");
-
-                foreach (var mag in locationActivityReport.MagnitudeDistribution.OrderByDescending(x => x.Value))
-                {
-                    sb.Append($"{mag.Value} x {mag.Key:F1} / ");
-                }
-            }
-
-            sb.AppendLine();
-            
-            sb.AppendLine(new string('-', 30));
-        }
-
-        string telegramMessage = sb.ToString();
-
-        return telegramMessage;
     }
 
     private async Task SendTelegramMessage(string alertMessage)

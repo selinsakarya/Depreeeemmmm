@@ -1,4 +1,3 @@
-using System.Text;
 using Depreeeemmmm.Constants;
 using Depreeeemmmm.Data;
 using Depreeeemmmm.Data.Entities;
@@ -24,7 +23,7 @@ public class HourlyEarthquakeAnalyser : IJob
     private readonly IConfigurationService _configurationService;
 
     public HourlyEarthquakeAnalyser(
-        ILogger<HourlyEarthquakeAnalyser> logger, 
+        ILogger<HourlyEarthquakeAnalyser> logger,
         DepremDbContext depremDbContext,
         ITelegramApiProxy telegramApiProxy,
         IConfigurationService configurationService)
@@ -38,12 +37,14 @@ public class HourlyEarthquakeAnalyser : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         _logger.LogInformation("HourlyEarthquakeAnalyser is started");
-        
+
         DateTime now = DateTime.UtcNow;
-
         DateTime oneHourAgo = now.AddHours(-1);
+        DateTime twoHoursAgo = now.AddHours(-2);
 
-        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking().Where(e => e.OccurredAt >= oneHourAgo && e.OccurredAt < now && e.Location != null).ToListAsync();
+        List<Earthquake> earthquakes = await _depremDbContext.Earthquakes.AsNoTracking()
+            .Where(e => e.OccurredAt >= oneHourAgo && e.OccurredAt < now && e.Location != null)
+            .ToListAsync(context.CancellationToken);
 
         if (earthquakes.Count == 0)
         {
@@ -52,72 +53,26 @@ public class HourlyEarthquakeAnalyser : IJob
             return;
         }
 
-        Dictionary<string, HourlyLocationActivityReport> result = earthquakes.ToHourlyLocationActivityReport();
+        List<Earthquake> previousPeriodEarthquakes = await _depremDbContext.Earthquakes.AsNoTracking()
+            .Where(e => e.OccurredAt >= twoHoursAgo && e.OccurredAt < oneHourAgo && e.Location != null)
+            .ToListAsync(context.CancellationToken);
+
+        Dictionary<string, int> previousCountByLocation = previousPeriodEarthquakes.ToLocationCountByLocation();
+        PeriodEarthquakeSummary periodSummary = EarthquakeReportAnalyzer.AnalyzePeriod(earthquakes, previousPeriodEarthquakes);
+
+        Dictionary<string, HourlyLocationActivityReport> result = earthquakes.ToHourlyLocationActivityReport(previousCountByLocation);
 
         List<HourlyLocationActivityReport> hourlyLocationActivityReports = result.Values
-            .OrderByDescending(x => x.TotalCount)
+            .OrderByDescending(x => x.Insights.ActivityScore)
+            .ThenByDescending(x => x.TotalCount)
             .Take(3)
             .ToList();
-        
-        string telegramMessage = CreateTelegramMessage(hourlyLocationActivityReports, now, oneHourAgo);
-        
+
+        string telegramMessage = EarthquakeReportMessageBuilder.BuildHourlyReport(periodSummary, hourlyLocationActivityReports, oneHourAgo, now);
+
         await SendTelegramMessage(telegramMessage);
-        
+
         _logger.LogInformation("HourlyEarthquakeAnalyser is finished");
-    }
-    
-    private static string CreateTelegramMessage(List<HourlyLocationActivityReport> locationActivityReports, DateTime now, DateTime oneHourAgo)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
-
-        DateTime turkeyStartDate = TimeZoneInfo.ConvertTimeFromUtc(oneHourAgo, turkeyTimeZone);
-       
-        DateTime turkeyEndDate = TimeZoneInfo.ConvertTimeFromUtc(now, turkeyTimeZone);
-
-        sb.AppendLine("Saatlik Deprem Raporu");
-        
-        sb.AppendLine($"{turkeyStartDate:dd.MM.yyyy HH:mm} - {turkeyEndDate:dd.MM.yyyy HH:mm}");
-        
-        sb.AppendLine();
-
-        foreach (HourlyLocationActivityReport locationActivityReport in locationActivityReports)
-        {
-            sb.AppendLine($"📍 {locationActivityReport.Location}");
-           
-            sb.AppendLine($"Toplam: {locationActivityReport.TotalCount} Deprem");
-            
-            sb.AppendLine($"Max: {Math.Round(locationActivityReport.MaxMagnitude, 2)}");
-
-            if (locationActivityReport.MinuteStatistics.Any())
-            {
-                sb.AppendLine("Dakikalık Dağılım:");
-
-                foreach (KeyValuePair<DateTime, MinuteStatistic> minute in locationActivityReport.MinuteStatistics.OrderBy(x => x.Key))
-                {
-                    DateTime turkeyMinute = TimeZoneInfo.ConvertTimeFromUtc(minute.Key, turkeyTimeZone);
-
-                    sb.AppendLine($"{turkeyMinute:HH:mm} → {minute.Value.Count} (Max {Math.Round(minute.Value.MaxMagnitude, 2)})");
-                }
-            }
-
-            if (locationActivityReport.MagnitudeDistribution.Any())
-            {
-                sb.AppendLine("Büyüklük Dağılımı:");
-
-                foreach (KeyValuePair<double, int> mag in locationActivityReport.MagnitudeDistribution.OrderByDescending(x => x.Value))
-                {
-                    sb.Append($"{mag.Value} x {mag.Key:F1} / ");
-                }
-            }
-
-            sb.AppendLine();
-            
-            sb.AppendLine(new string('-', 30));
-        }
-
-        return sb.ToString();
     }
 
     private async Task SendTelegramMessage(string alertMessage)
@@ -151,7 +106,7 @@ public class HourlyEarthquakeAnalyser : IJob
             throw new ApplicationException($"Telegram message could not be sent. Message: {alertMessage}");
         }
     }
-    
+
     private async Task<int> GetAdminTelegramChatId()
     {
         const string key = ConfigurationKeys.AdminTelegramChatId;

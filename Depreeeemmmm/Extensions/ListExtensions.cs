@@ -1,190 +1,206 @@
-using System.Text;
 using Depreeeemmmm.Data.Entities;
 using Depreeeemmmm.Models;
+using Depreeeemmmm.Services;
 
 namespace Depreeeemmmm.Extensions;
 
 public static class ListExtensions
 {
-    public static Dictionary<string, DailyLocationActivityReport> ToDailyLocationActivityReport(this List<Earthquake> earthquakes)
+    public static Dictionary<string, DailyLocationActivityReport> ToDailyLocationActivityReport(
+        this List<Earthquake> earthquakes,
+        IReadOnlyDictionary<string, int>? previousCountByLocation = null)
     {
         Dictionary<string, DailyLocationActivityReport> locationActivityReport = new Dictionary<string, DailyLocationActivityReport>();
+        Dictionary<string, List<Earthquake>> earthquakesByLocation = GroupEarthquakesByLocation(earthquakes);
 
-        foreach (Earthquake earthquake in earthquakes)
+        foreach ((string location, List<Earthquake> locationEarthquakes) in earthquakesByLocation)
         {
-            if (locationActivityReport.TryGetValue(earthquake.Location, out DailyLocationActivityReport? locationReport))
+            DailyLocationActivityReport locationReport = new DailyLocationActivityReport
             {
-                locationReport.TotalCount += 1;
-            }
-            else
+                Location = location,
+                MaxMagnitude = locationEarthquakes.Max(e => e.Magnitude),
+                TotalCount = locationEarthquakes.Count
+            };
+
+            foreach (Earthquake earthquake in locationEarthquakes)
             {
-                locationReport = new DailyLocationActivityReport
+                int hour = earthquake.OccurredAt.Hour;
+
+                if (locationReport.HourlyStatistics.TryGetValue(hour, out HourlyStatistic? hourlyStatistic) is false)
                 {
-                    Location = earthquake.Location,
-                    MaxMagnitude = earthquake.Magnitude,
-                    TotalCount = 1
-                };
+                    hourlyStatistic = new HourlyStatistic
+                    {
+                        Count = 0,
+                        MaxMagnitude = earthquake.Magnitude
+                    };
 
-                locationActivityReport[earthquake.Location] = locationReport;
-            }
+                    locationReport.HourlyStatistics[hour] = hourlyStatistic;
+                }
 
-            if (earthquake.Magnitude > locationReport.MaxMagnitude)
-            {
-                locationReport.MaxMagnitude = earthquake.Magnitude;
-            }
-
-            int hour = earthquake.OccurredAt.Hour;
-
-            if (locationReport.HourlyStatistics.TryGetValue(hour, out var hourlyStatistic))
-            {
                 hourlyStatistic.Count++;
-            }
-            else
-            {
-                hourlyStatistic = new HourlyStatistic()
+
+                if (earthquake.Magnitude > hourlyStatistic.MaxMagnitude)
                 {
-                    Count = 1,
-                    MaxMagnitude = earthquake.Magnitude
-                };
+                    hourlyStatistic.MaxMagnitude = earthquake.Magnitude;
+                }
 
-                locationReport.HourlyStatistics[hour] = hourlyStatistic;
+                double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
+
+                if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
+                {
+                    locationReport.MagnitudeDistribution[magnitudeKey] += 1;
+                }
             }
 
-            if (earthquake.Magnitude > hourlyStatistic.MaxMagnitude)
+            int? previousCount = null;
+
+            if (previousCountByLocation is not null && previousCountByLocation.TryGetValue(location, out int count))
             {
-                hourlyStatistic.MaxMagnitude = earthquake.Magnitude;
+                previousCount = count;
             }
 
-            double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
-
-            if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
-            {
-                locationReport.MagnitudeDistribution[magnitudeKey] += 1;
-            }
+            locationReport.Insights = EarthquakeReportAnalyzer.AnalyzeLocation(locationEarthquakes, previousCount);
+            locationActivityReport[location] = locationReport;
         }
 
         return locationActivityReport;
     }
 
-    public static Dictionary<string, WeeklyLocationActivityReport> ToWeeklyLocationActivityReport(this List<Earthquake> earthquakes)
+    public static Dictionary<string, WeeklyLocationActivityReport> ToWeeklyLocationActivityReport(
+        this List<Earthquake> earthquakes,
+        IReadOnlyDictionary<string, int>? previousCountByLocation = null)
     {
         Dictionary<string, WeeklyLocationActivityReport> locationActivityReport = new();
+        Dictionary<string, List<Earthquake>> earthquakesByLocation = GroupEarthquakesByLocation(earthquakes);
 
-        foreach (Earthquake earthquake in earthquakes)
+        foreach ((string location, List<Earthquake> locationEarthquakes) in earthquakesByLocation)
         {
-            if (locationActivityReport.TryGetValue(earthquake.Location, out WeeklyLocationActivityReport? locationReport))
+            WeeklyLocationActivityReport locationReport = new WeeklyLocationActivityReport
             {
-                locationReport.TotalCount += 1;
-            }
-            else
+                Location = location,
+                MaxMagnitude = locationEarthquakes.Max(e => e.Magnitude),
+                TotalCount = locationEarthquakes.Count
+            };
+
+            foreach (Earthquake earthquake in locationEarthquakes)
             {
-                locationReport = new WeeklyLocationActivityReport
+                DateTime day = earthquake.OccurredAt.Date;
+
+                if (locationReport.DailyStatistics.TryGetValue(day, out DailyStatistic? dailyStatistic) is false)
                 {
-                    Location = earthquake.Location,
-                    MaxMagnitude = earthquake.Magnitude,
-                    TotalCount = 1
-                };
+                    dailyStatistic = new DailyStatistic
+                    {
+                        Count = 0,
+                        MaxMagnitude = earthquake.Magnitude
+                    };
 
-                locationActivityReport[earthquake.Location] = locationReport;
-            }
+                    locationReport.DailyStatistics[day] = dailyStatistic;
+                }
 
-            if (earthquake.Magnitude > locationReport.MaxMagnitude)
-            {
-                locationReport.MaxMagnitude = earthquake.Magnitude;
-            }
-
-            DateTime day = earthquake.OccurredAt.Date;
-
-            if (locationReport.DailyStatistics.TryGetValue(day, out var dailyStatistic))
-            {
                 dailyStatistic.Count++;
-            }
-            else
-            {
-                dailyStatistic = new DailyStatistic
+
+                if (earthquake.Magnitude > dailyStatistic.MaxMagnitude)
                 {
-                    Count = 1,
-                    MaxMagnitude = earthquake.Magnitude
-                };
+                    dailyStatistic.MaxMagnitude = earthquake.Magnitude;
+                }
 
-                locationReport.DailyStatistics[day] = dailyStatistic;
+                double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
+
+                if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
+                {
+                    locationReport.MagnitudeDistribution[magnitudeKey] += 1;
+                }
             }
 
-            if (earthquake.Magnitude > dailyStatistic.MaxMagnitude)
+            int? previousCount = null;
+
+            if (previousCountByLocation is not null && previousCountByLocation.TryGetValue(location, out int count))
             {
-                dailyStatistic.MaxMagnitude = earthquake.Magnitude;
+                previousCount = count;
             }
 
-            double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
-
-            if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
-            {
-                locationReport.MagnitudeDistribution[magnitudeKey] += 1;
-            }
+            locationReport.Insights = EarthquakeReportAnalyzer.AnalyzeLocation(locationEarthquakes, previousCount);
+            locationActivityReport[location] = locationReport;
         }
 
         return locationActivityReport;
     }
-    
-    public static Dictionary<string, HourlyLocationActivityReport> ToHourlyLocationActivityReport(this List<Earthquake> earthquakes)
+
+    public static Dictionary<string, HourlyLocationActivityReport> ToHourlyLocationActivityReport(
+        this List<Earthquake> earthquakes,
+        IReadOnlyDictionary<string, int>? previousCountByLocation = null)
     {
         Dictionary<string, HourlyLocationActivityReport> locationActivityReport = new();
+        Dictionary<string, List<Earthquake>> earthquakesByLocation = GroupEarthquakesByLocation(earthquakes);
 
-        foreach (Earthquake earthquake in earthquakes)
+        foreach ((string location, List<Earthquake> locationEarthquakes) in earthquakesByLocation)
         {
-            if (locationActivityReport.TryGetValue(earthquake.Location, out HourlyLocationActivityReport? locationReport))
+            HourlyLocationActivityReport locationReport = new HourlyLocationActivityReport
             {
-                locationReport.TotalCount += 1;
-            }
-            else
+                Location = location,
+                MaxMagnitude = locationEarthquakes.Max(e => e.Magnitude),
+                TotalCount = locationEarthquakes.Count
+            };
+
+            foreach (Earthquake earthquake in locationEarthquakes)
             {
-                locationReport = new HourlyLocationActivityReport
+                DateTime minuteKey = earthquake.OccurredAt
+                    .AddSeconds(-earthquake.OccurredAt.Second)
+                    .AddMilliseconds(-earthquake.OccurredAt.Millisecond);
+
+                if (locationReport.MinuteStatistics.TryGetValue(minuteKey, out MinuteStatistic? minuteStatistic) is false)
                 {
-                    Location = earthquake.Location,
-                    MaxMagnitude = earthquake.Magnitude,
-                    TotalCount = 1
-                };
+                    minuteStatistic = new MinuteStatistic
+                    {
+                        Count = 0,
+                        MaxMagnitude = earthquake.Magnitude
+                    };
 
-                locationActivityReport[earthquake.Location] = locationReport;
-            }
+                    locationReport.MinuteStatistics[minuteKey] = minuteStatistic;
+                }
 
-            if (earthquake.Magnitude > locationReport.MaxMagnitude)
-            {
-                locationReport.MaxMagnitude = earthquake.Magnitude;
-            }
-
-            DateTime minuteKey = earthquake.OccurredAt
-                .AddSeconds(-earthquake.OccurredAt.Second)
-                .AddMilliseconds(-earthquake.OccurredAt.Millisecond);
-
-            if (locationReport.MinuteStatistics.TryGetValue(minuteKey, out var minuteStatistic))
-            {
                 minuteStatistic.Count++;
-            }
-            else
-            {
-                minuteStatistic = new MinuteStatistic
+
+                if (earthquake.Magnitude > minuteStatistic.MaxMagnitude)
                 {
-                    Count = 1,
-                    MaxMagnitude = earthquake.Magnitude
-                };
+                    minuteStatistic.MaxMagnitude = earthquake.Magnitude;
+                }
 
-                locationReport.MinuteStatistics[minuteKey] = minuteStatistic;
+                double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
+
+                if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
+                {
+                    locationReport.MagnitudeDistribution[magnitudeKey] += 1;
+                }
             }
 
-            if (earthquake.Magnitude > minuteStatistic.MaxMagnitude)
+            int? previousCount = null;
+
+            if (previousCountByLocation is not null && previousCountByLocation.TryGetValue(location, out int count))
             {
-                minuteStatistic.MaxMagnitude = earthquake.Magnitude;
+                previousCount = count;
             }
 
-            double magnitudeKey = Math.Round(earthquake.Magnitude, 1);
-
-            if (locationReport.MagnitudeDistribution.TryAdd(magnitudeKey, 1) is false)
-            {
-                locationReport.MagnitudeDistribution[magnitudeKey] += 1;
-            }
+            locationReport.Insights = EarthquakeReportAnalyzer.AnalyzeLocation(locationEarthquakes, previousCount);
+            locationActivityReport[location] = locationReport;
         }
 
         return locationActivityReport;
+    }
+
+    public static Dictionary<string, int> ToLocationCountByLocation(this List<Earthquake> earthquakes)
+    {
+        return earthquakes
+            .Where(e => e.Location != null)
+            .GroupBy(e => e.Location!)
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private static Dictionary<string, List<Earthquake>> GroupEarthquakesByLocation(List<Earthquake> earthquakes)
+    {
+        return earthquakes
+            .Where(e => e.Location != null)
+            .GroupBy(e => e.Location!)
+            .ToDictionary(g => g.Key, g => g.ToList());
     }
 }
