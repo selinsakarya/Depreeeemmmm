@@ -185,6 +185,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         }
 
         double maxRecentMagnitude = nearbyEarthquakes.Max(e => e.Magnitude);
+        
         double jumpAmount = Math.Round(earthquake.Magnitude - maxRecentMagnitude, 2);
 
         return (jumpAmount >= minJump, jumpAmount);
@@ -218,6 +219,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         List<Earthquake> chronological = nearbyEarthquakes.OrderBy(e => e.OccurredAt).ToList();
 
         int upwardMovementsCount = 0;
+        
         int totalComparisons = chronological.Count - 1;
 
         for (int i = 1; i < chronological.Count; i++)
