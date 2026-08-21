@@ -75,13 +75,13 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
             List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48);
 
-            bool isMagnitudeJumpDetected = IsMagnitudeJumpDetected(earthquake, nearbyEarthquakes, minJump: 1.2);
+            bool isMagnitudeJumpDetected = IsMagnitudeJumpDetected(earthquake, nearbyEarthquakes, minJump: 1.0);
 
             bool isDepthTrendGoingUpward = IsDepthTrendGoingUpward(nearbyEarthquakes, minimumEarthQuakeToCompare: 5);
 
             bool isMagnitudeTrendGoingUpward = IsMagnitudeTrendGoingUpward(nearbyEarthquakes, minimumEarthQuakeToCompare: 5);
 
-            bool isClusterDensityHigh = IsClusterDensityHigh(nearbyEarthquakes, minimumEarthQuakeCount: 8);
+            bool isClusterDensityHigh = IsClusterDensityHigh(nearbyEarthquakes, minimumEarthQuakeCount: 10);
 
             AdminEarthquakeAlertNotificationParameters adminEarthquakeAlertNotificationParameters = new AdminEarthquakeAlertNotificationParameters()
             {
@@ -98,7 +98,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
             };
 
             string alertMessage = BuildTelegramAlertMessage(adminEarthquakeAlertNotificationParameters);
-            
+
             _logger.LogInformation(alertMessage);
 
             await SendTelegramMessage(alertMessage);
