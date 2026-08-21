@@ -25,7 +25,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
     public NotifyAdminWhenEarthquakeOccurred(
         ILogger<NotifyAdminWhenEarthquakeOccurred> logger,
         DepremDbContext depremDbContext,
-        ITelegramApiProxy telegramApiProxy, 
+        ITelegramApiProxy telegramApiProxy,
         IConfigurationService configurationService)
     {
         _logger = logger;
@@ -53,9 +53,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
         if (earthquake is null)
         {
-            _logger.LogWarning("Earthquake is null");
-
-            return;
+            throw new ApplicationException("Earthquake not found");
         }
 
         foreach (AdminLocation adminLocation in adminLocations)
@@ -67,7 +65,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
             if (isEarthquakeOccurredNearAdmin is false)
             {
                 _logger.LogWarning($"Skipping earthquake because it is not near admin location. DistanceToAdminInKm: {distanceToAdminInKm} AdminLocationName: {adminLocation.Name} Location: {earthquake.Location}");
-                
+
                 return;
             }
 
@@ -75,13 +73,15 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
             bool isDepthBelowThreshold = IsDepthBelowThreshold(earthquake, threshold: 10);
 
-            bool isMagnitudeJumpDetected = await IsMagnitudeJumpDetected(earthquake, maxDistanceInKm: 150, timeWindowInHours: 36, minJump: 1.2);
+            List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48);
 
-            bool isDepthTrendGoingUpward = await IsDepthTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
-            
-            bool isMagnitudeTrendGoingUpward = await IsMagnitudeTrendGoingUpward(earthquake, maxDistanceInKm: 150, timeWindowInHours: 48, minimumEarthQuakeToCompare: 5);
+            bool isMagnitudeJumpDetected = IsMagnitudeJumpDetected(earthquake, nearbyEarthquakes, minJump: 1.2);
 
-            bool isClusterDensityHigh = await IsClusterDensityHigh(earthquake, maxDistanceInKm: 150, timeWindowInHours: 36, minimumEarthQuakeCount: 8);
+            bool isDepthTrendGoingUpward = IsDepthTrendGoingUpward(nearbyEarthquakes, minimumEarthQuakeToCompare: 5);
+
+            bool isMagnitudeTrendGoingUpward = IsMagnitudeTrendGoingUpward(nearbyEarthquakes, minimumEarthQuakeToCompare: 5);
+
+            bool isClusterDensityHigh = IsClusterDensityHigh(nearbyEarthquakes, minimumEarthQuakeCount: 8);
 
             AdminEarthquakeAlertNotificationParameters adminEarthquakeAlertNotificationParameters = new AdminEarthquakeAlertNotificationParameters()
             {
@@ -96,8 +96,10 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
                 IsMagnitudeTrendGoingUpward = isMagnitudeTrendGoingUpward,
                 IsClusterDensityHigh = isClusterDensityHigh
             };
-            
+
             string alertMessage = BuildTelegramAlertMessage(adminEarthquakeAlertNotificationParameters);
+            
+            _logger.LogInformation(alertMessage);
 
             await SendTelegramMessage(alertMessage);
         }
@@ -119,10 +121,8 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         return isDepthBelowThreshold;
     }
 
-    private async Task<bool> IsMagnitudeJumpDetected(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, double minJump)
+    private static bool IsMagnitudeJumpDetected(Earthquake earthquake, List<Earthquake> nearbyEarthquakes, double minJump)
     {
-        List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm, timeWindowInHours);
-
         if (nearbyEarthquakes.Count == 0)
         {
             return false;
@@ -133,10 +133,8 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         return earthquake.Magnitude >= maxRecentMagnitude + minJump;
     }
 
-    private async Task<bool> IsDepthTrendGoingUpward(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeToCompare)
+    private static bool IsDepthTrendGoingUpward(List<Earthquake> nearbyEarthquakes, int minimumEarthQuakeToCompare)
     {
-        List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm, timeWindowInHours);
-
         if (nearbyEarthquakes.Count < minimumEarthQuakeToCompare)
         {
             return false;
@@ -150,18 +148,16 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
         return secondHalfAvgDepth < firstHalfAvgDepth;
     }
-    
-    private async Task<bool> IsMagnitudeTrendGoingUpward(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeToCompare)
-    {
-        List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm, timeWindowInHours);
 
+    private static bool IsMagnitudeTrendGoingUpward(List<Earthquake> nearbyEarthquakes, int minimumEarthQuakeToCompare)
+    {
         if (nearbyEarthquakes.Count < minimumEarthQuakeToCompare)
         {
             return false;
         }
 
         int upwardMovementsCount = 0;
-        
+
         int totalComparisons = nearbyEarthquakes.Count - 1;
 
         for (int i = 1; i < nearbyEarthquakes.Count; i++)
@@ -177,10 +173,8 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         return ratio >= 0.6;
     }
 
-    private async Task<bool> IsClusterDensityHigh(Earthquake earthquake, int maxDistanceInKm, int timeWindowInHours, int minimumEarthQuakeCount)
+    private static bool IsClusterDensityHigh(List<Earthquake> nearbyEarthquakes, int minimumEarthQuakeCount)
     {
-        List<Earthquake> nearbyEarthquakes = await GetNearbyEarthquakes(earthquake, maxDistanceInKm, timeWindowInHours);
-
         if (nearbyEarthquakes.Count >= minimumEarthQuakeCount)
         {
             return true;
@@ -247,11 +241,11 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         StringBuilder sb = new StringBuilder();
 
         sb.AppendLine(alertHeader);
-        
+
         TimeZoneInfo turkeyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
 
         DateTime turkeyDateTime = TimeZoneInfo.ConvertTimeFromUtc(parameters.Earthquake.OccurredAt, turkeyTimeZone);
-        
+
         sb.AppendLine($"Konum: {parameters.Earthquake.Location}, Büyüklük: {parameters.Earthquake.Magnitude}, Derinlik: {parameters.Earthquake.Depth} km, Zaman: {turkeyDateTime:dd.MM.yyyy HH:mm}");
 
         sb.AppendLine();
@@ -294,37 +288,37 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
         StringBuilder sb = new StringBuilder();
 
         sb.Append("🚨");
-        
+
         if (parameters.IsMagnitudeAboveThreshold)
         {
             sb.Append("🚨");
         }
-        
+
         if (parameters.IsDepthBelowThreshold)
         {
             sb.Append("🚨");
         }
-        
+
         if (parameters.IsMagnitudeJumpDetected)
         {
             sb.Append("🚨");
         }
-        
+
         if (parameters.IsDepthTrendGoingUpward)
         {
             sb.Append("🚨");
         }
-        
+
         if (parameters.IsClusterDensityHigh)
         {
             sb.Append("🚨");
         }
-        
+
         if (parameters.IsMagnitudeTrendGoingUpward)
         {
             sb.Append("🚨");
         }
-        
+
         return sb.ToString();
     }
 
