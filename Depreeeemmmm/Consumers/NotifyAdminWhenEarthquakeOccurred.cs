@@ -156,7 +156,7 @@ public class NotifyAdminWhenEarthquakeOccurred : IConsumer<EarthquakeOccurred>
 
             _logger.LogInformation(alertMessage);
 
-            var now = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
 
             if (earthquake.OccurredAt.Date == now.Date)
             {
