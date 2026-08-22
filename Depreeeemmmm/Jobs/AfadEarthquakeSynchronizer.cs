@@ -38,9 +38,9 @@ public class AfadEarthquakeSynchronizer : IJob
 
         DateTime now = DateTime.UtcNow;
         
-        DateTime lastYear = now.AddYears(-1);
+        DateTime lastMonth = now.AddMonths(-1);
         
-        DateTime startTime = lastYear;
+        DateTime startTime = lastMonth;
         
         DateTime endTime = now;
 
