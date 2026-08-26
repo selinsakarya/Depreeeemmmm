@@ -30,7 +30,7 @@ public class OutboxMessagePublisherService : IOutboxMessagePublisherService
         _busControl = busControl;
     }
 
-    public async Task Publish(CancellationToken message)
+    public async Task Publish(CancellationToken cancellationToken)
     {
         IEnumerable<OutboxMessage> outboxMessages = await GetOutboxMessages();
 
@@ -40,11 +40,7 @@ public class OutboxMessagePublisherService : IOutboxMessagePublisherService
                 .Handle<Exception>()
                 .Fallback(_ =>
                 {
-                    _logger.LogError(LoggingEvents.OutboxMessagePublishFailed, LoggingEvents.OrderOutboxJobsLogPayload, new
-                    {
-                        MessageId = cancellationToken.Id,
-                        MessageType = cancellationToken.Type
-                    });
+                    _logger.LogError(LoggingEvents.OutboxMessagePublishFailed, LoggingEvents.OutboxJobsPayload);
                 });
 
             RetryPolicy retryPolicy = Policy
@@ -53,12 +49,7 @@ public class OutboxMessagePublisherService : IOutboxMessagePublisherService
                     retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt))
                     , (exception, _, retryCount, _) =>
                     {
-                        _logger.LogWarning(LoggingEvents.OutboxMessagePublishFailed, exception, LoggingEvents.OrderOutboxJobsLogPayload, new
-                        {
-                            RetryCount = retryCount,
-                            MessageId = cancellationToken.Id,
-                            MessageType = cancellationToken.Type
-                        });
+                        _logger.LogWarning(LoggingEvents.OutboxMessagePublishFailed, exception, LoggingEvents.OutboxJobsPayload);
                     });
 
             fallbackPolicy

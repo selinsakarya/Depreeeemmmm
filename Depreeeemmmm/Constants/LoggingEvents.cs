@@ -4,5 +4,5 @@ public static class LoggingEvents
 {
     public static readonly EventId OutboxMessagePublishFailed = new EventId(1001, nameof(OutboxMessagePublishFailed));
 
-    public const string OrderOutboxJobsLogPayload = "@OrderOutboxJobsLogPayload";
+    public const string OutboxJobsPayload = "@OutboxJobsPayload";
 }
